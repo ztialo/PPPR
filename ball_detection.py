@@ -2,12 +2,17 @@ import cv2
 import numpy as np
 
 # Start video capture from the camera
-cap = cv2.VideoCapture(0)  # Change '0' if using an external camera
+cap = cv2.VideoCapture('/dev/video0')  # Change '0' if using an external camera
+
+if not cap.isOpened():
+    print("Error: Could not open video stream.")
+    exit()
 
 while True:
     # Read a frame
     ret, frame = cap.read()
     if not ret:
+        print("Error: Failed to capture image.")
         break
 
     # Convert frame to HSV color space
