@@ -1,52 +1,58 @@
 import cv2
 import numpy as np
+from picamera2 import Picamera2
 
-# Start video capture from the camera
-cap = cv2.VideoCapture('/dev/video0')  # Change '0' if using an external camera
+# Initialize Picamera2
+picam2 = Picamera2()
+picam2.preview_configuration.main.size = (1152, 648)  # Set the resolution
+picam2.preview_configuration.main.format = "RGB888"  # Set the format
+picam2.preview_configuration.align()  # Align the configuration
+picam2.configure("preview")  # Set to preview mode
+picam2.start()  # Start capturing
 
-if not cap.isOpened():
-    print("Error: Could not open video stream.")
-    exit()
+# Define the range of orange color in HSV
+# You might need to tweak these values to match your specific lighting conditions and camera settings
+lower_orange = np.array([5, 150, 150])  # Lower bound of orange (Hue, Saturation, Value)
+upper_orange = np.array([15, 255, 255])  # Upper bound of orange (Hue, Saturation, Value)
 
 while True:
-    # Read a frame
-    ret, frame = cap.read()
-    if not ret:
-        print("Error: Failed to capture image.")
-        break
+    # Capture an image from the camera
+    im = picam2.capture_array()
 
-    # Convert frame to HSV color space
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-    # Define the color range for detecting the ping pong ball
-    # Orange ball (adjust values for your lighting)
-    lower_orange = np.array([5, 100, 100])
-    upper_orange = np.array([20, 255, 255])
+    # Convert the image from RGB to HSV
+    hsv = cv2.cvtColor(im, cv2.COLOR_RGB2HSV)
 
     # Create a mask for the orange color
     mask = cv2.inRange(hsv, lower_orange, upper_orange)
 
-    # Find contours of the detected object
-    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # Apply the mask to the original image (optional)
+    result = cv2.bitwise_and(im, im, mask=mask)
 
-    for contour in contours:
-        # Filter by size to ignore small objects
-        if cv2.contourArea(contour) > 500:
-            # Draw a bounding circle around the detected ball
-            (x, y), radius = cv2.minEnclosingCircle(contour)
-            center = (int(x), int(y))
-            radius = int(radius)
+    # Find contours in the mask
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # Draw the circle on the original frame
-            cv2.circle(frame, center, radius, (0, 255, 0), 2)
+    # If any contours are found
+    if contours:
+        # Find the largest contour (most likely the orange object)
+        largest_contour = max(contours, key=cv2.contourArea)
 
-    # Display the frame
-    cv2.imshow("Ping Pong Ball Detection", frame)
+        # Get the bounding box of the largest contour
+        x, y, w, h = cv2.boundingRect(largest_contour)
 
-    # Exit on pressing 'q'
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+        # Draw the bounding box on the image
+        cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 2)  # Green bounding box
+
+        # Optionally, draw the center of the object
+        cx = x + w // 2
+        cy = y + h // 2
+        cv2.circle(im, (cx, cy), 5, (0, 0, 255), -1)  # Red circle in the center
+
+    # Display the original image with the tracking information
+    cv2.imshow("camera feed", im)
+
+    # Press 'q' to quit the loop
+    if cv2.waitKey(1) == ord('q'):
         break
 
-# Release the video capture and close windows
-cap.release()
+# Clean up
 cv2.destroyAllWindows()
