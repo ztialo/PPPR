@@ -10,9 +10,13 @@ picam2.preview_configuration.align()  # Align the configuration
 picam2.configure("preview")  # Set to preview mode
 picam2.start()  # Start capturing
 
-# Define the range of orange color in HSV
+# Define the range of orange color in HSV (may need adjustment)
 lower_orange = np.array([5, 150, 150])  # Lower bound of orange (Hue, Saturation, Value)
 upper_orange = np.array([15, 255, 255])  # Upper bound of orange (Hue, Saturation, Value)
+
+# Debug: Print the HSV range being used
+print(f"Lower Orange HSV: {lower_orange}")
+print(f"Upper Orange HSV: {upper_orange}")
 
 while True:
     # Capture an image from the camera
@@ -29,6 +33,9 @@ while True:
 
     # Apply the mask to the original image (optional, for visual feedback)
     result = cv2.bitwise_and(im_bgr, im_bgr, mask=mask)
+
+    # Debug: Show the mask to verify the color detection
+    cv2.imshow("Mask", mask)
 
     # Find contours in the mask
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
