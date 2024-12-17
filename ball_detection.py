@@ -11,8 +11,8 @@ picam2.configure("preview")
 picam2.start()
 
 # Define the HSV range for light blue (adjust these as necessary)
-lower_light_blue = np.array([90, 100, 180])  # Lower bound of light blue
-upper_light_blue = np.array([120, 150, 255])  # Upper bound of light blue
+lower_light_blue = np.array([100, 150, 150])  # Lower bound of light blue
+upper_light_blue = np.array([104, 255, 255])  # Upper bound of light blue
 
 while True:
     im = picam2.capture_array()
