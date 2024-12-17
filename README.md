@@ -12,5 +12,6 @@ python3 ball_detection.py
 # the command to run camera_detection.py
 python3 camera_detection.py
 
-https://core-electronics.com.au/guides/Face-Tracking-Raspberry-Pi/#Setting
+
+
 
