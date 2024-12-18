@@ -10,9 +10,9 @@ picam2.preview_configuration.align()
 picam2.configure("preview")
 picam2.start()
 
-# Define the HSV range for light blue (hue from 0 to 3)
-lower_hue = np.array([0, 150, 150])  # Lower bound of hue (0 to 3 range), adjust saturation and value
-upper_hue = np.array([3, 255, 255])  # Upper bound of hue (0 to 3 range), adjust saturation and value
+# Define the HSV range for white color (with tolerance for greyness)
+lower_white = np.array([0, 0, 200])  # Lower bound: Hue=0 (white), Low saturation, High value
+upper_white = np.array([10, 50, 255])  # Upper bound: Slightly higher hue range (0-10), low saturation, high value
 
 while True:
     # Capture image from Picamera2
@@ -20,33 +20,38 @@ while True:
     im_bgr = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)  # Convert RGB to BGR for OpenCV
     hsv = cv2.cvtColor(im_bgr, cv2.COLOR_BGR2HSV)  # Convert the image to HSV
 
-    # Create a mask to detect the hue range from 0 to 3
-    mask = cv2.inRange(hsv, lower_hue, upper_hue)
+    # Find contours in the image
+    contours, _ = cv2.findContours(cv2.cvtColor(im_bgr, cv2.COLOR_BGR2GRAY), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Apply the mask to the image
-    result = cv2.bitwise_and(im_bgr, im_bgr, mask=mask)
+    for contour in contours:
+        # Approximate the contour to a polygon and check if it's a circle
+        if cv2.contourArea(contour) < 100:  # Ignore small contours (adjust as needed)
+            continue
 
-    # Find contours in the mask
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if contours:
-        # Get the largest contour
-        largest_contour = max(contours, key=cv2.contourArea)
+        # Get the minimum enclosing circle
+        (x, y), radius = cv2.minEnclosingCircle(contour)
         
-        # Get the minimum enclosing circle and check if it's round
-        (x, y), radius = cv2.minEnclosingCircle(largest_contour)
-        if radius > 10:  # Minimum size for detection
-            # Draw the circle
+        # Check if the detected contour is approximately round (i.e., a ball)
+        aspect_ratio = cv2.contourArea(contour) / (np.pi * (radius ** 2))  # Circularity check
+        if aspect_ratio > 0.7:  # Adjust threshold for circularity (closer to 1 is more circular)
+            # Draw the circle around the detected object
             cv2.circle(im_bgr, (int(x), int(y)), int(radius), (0, 255, 0), 2)  # Green circle
 
-            # Draw the center of the circle
+            # Optionally, draw the center of the circle (red)
             cv2.circle(im_bgr, (int(x), int(y)), 5, (0, 0, 255), -1)  # Red circle at the center
 
-            # Optionally, print the radius and coordinates of the detected object
-            print(f"Object detected at (x, y): ({x}, {y}), Radius: {radius}")
+            # Get the HSV value at the center of the circle
+            hsv_value = hsv[int(y), int(x)]  # Get the HSV value at the center of the detected object
+            hue_value = hsv_value[0]
+            saturation_value = hsv_value[1]
+            value_value = hsv_value[2]
 
-    # Show the result with detected light blue object
-    cv2.imshow("Light Blue Object Detection", im_bgr)
+            # Check if the center of the object is close to white (HSV)
+            if lower_white[0] <= hue_value <= upper_white[0] and lower_white[1] <= saturation_value <= upper_white[1] and lower_white[2] <= value_value <= upper_white[2]:
+                print(f"Detected a white ball at (x, y): ({x}, {y}), Radius: {radius}")
+
+    # Show the result with detected white ball
+    cv2.imshow("White Ball Detection", im_bgr)
 
     # Exit on 'q' key
     if cv2.waitKey(1) == ord('q'):
