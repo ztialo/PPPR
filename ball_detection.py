@@ -1,53 +1,49 @@
 import cv2
 import numpy as np
-from picamera2 import Picamera2
 
-# Initialize Picamera2
-picam2 = Picamera2()
-picam2.preview_configuration.main.size = (1152, 648)
-picam2.preview_configuration.main.format = "RGB888"
-picam2.preview_configuration.align()
-picam2.configure("preview")
-picam2.start()
-
-# Define the HSV range for light blue (adjust these as necessary)
-lower_light_blue = np.array([100, 150, 150])  # Lower bound of light blue
-upper_light_blue = np.array([104, 255, 255])  # Upper bound of light blue
+# Initialize the camera
+cap = cv2.VideoCapture(0)  # Use 0 for the default camera
 
 while True:
-    im = picam2.capture_array()
-    im_bgr = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
-    hsv = cv2.cvtColor(im_bgr, cv2.COLOR_BGR2HSV)
+    ret, frame = cap.read()
 
-    # Create a mask to detect light blue color
-    mask = cv2.inRange(hsv, lower_light_blue, upper_light_blue)
-
-    # Apply the mask to the image
-    result = cv2.bitwise_and(im_bgr, im_bgr, mask=mask)
-
-    # Find contours in the mask
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if contours:
-        largest_contour = max(contours, key=cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(largest_contour)
-        cv2.rectangle(im_bgr, (x, y), (x + w, y + h), (0, 255, 0), 2)  # Green rectangle
-
-        # Optionally, draw the center of the object
-        cx = x + w // 2
-        cy = y + h // 2
-        cv2.circle(im_bgr, (cx, cy), 5, (0, 0, 255), -1)  # Red circle in the center
-
-        # Get the hue value of the object in the center of the bounding box
-        hsv_value = hsv[cy, cx]  # Get the HSV value at the center of the object
-        hue_value = hsv_value[0]  # Extract the Hue component (first element)
-        print(f"Hue Value: {hue_value}")
-
-    # Show the result
-    cv2.imshow("Light Blue Tracking", im_bgr)
-
-    # Exit on 'q' key
-    if cv2.waitKey(1) == ord('q'):
+    if not ret:
         break
 
+    # Convert the frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Apply Gaussian blur to reduce noise
+    blurred = cv2.GaussianBlur(gray, (15, 15), 0)
+
+    # Threshold to get a binary image
+    _, thresholded = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)
+
+    # Find contours in the thresholded image
+    contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    for contour in contours:
+        # Approximate the contour to a polygon
+        epsilon = 0.04 * cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, epsilon, True)
+
+        # If the approximation has 4 vertices (a circle), it is a round object
+        if len(approx) > 8:  # Circles will have more than 8 vertices
+            # Get the center and radius of the circle
+            (x, y), radius = cv2.minEnclosingCircle(contour)
+
+            # If the radius is above a threshold, it's likely a ping pong ball
+            if radius > 10:
+                # Draw the circle on the frame
+                cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 0), 2)
+
+    # Display the resulting frame
+    cv2.imshow("Ping Pong Ball Detection", frame)
+
+    # Exit on pressing 'q'
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release the camera and close the window
+cap.release()
 cv2.destroyAllWindows()
