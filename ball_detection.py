@@ -20,7 +20,7 @@ def detect_ball():
 
         # Step 1: Threshold to detect bright (white) regions
         # White color in BGR: all channels (Blue, Green, Red) should be high
-        lower_white = np.array([200, 200, 200])  # Lower bound for white (BGR)
+        lower_white = np.array([210, 210, 210])  # Lower bound for white (BGR)
         upper_white = np.array([255, 255, 255])  # Upper bound for white (BGR)
 
         mask = cv2.inRange(im_bgr, lower_white, upper_white)  # Mask for white regions
@@ -35,7 +35,7 @@ def detect_ball():
         # Step 3: Loop through contours and prioritize the largest circular object
         for contour in contours:
             # Ignore small contours
-            if cv2.contourArea(contour) < 100:
+            if cv2.contourArea(contour) < 70:
                 continue
 
             # Get the minimum enclosing circle
