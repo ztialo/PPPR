@@ -20,18 +20,21 @@ while True:
     im_bgr = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)  # Convert RGB to BGR for OpenCV
     hsv = cv2.cvtColor(im_bgr, cv2.COLOR_BGR2HSV)  # Convert the image to HSV
 
-    # Find contours in the image
-    contours, _ = cv2.findContours(cv2.cvtColor(im_bgr, cv2.COLOR_BGR2GRAY), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Step 1: Create a mask to isolate the white regions
+    mask = cv2.inRange(hsv, lower_white, upper_white)
+
+    # Step 2: Find contours in the masked image
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
-        # Approximate the contour to a polygon and check if it's a circle
-        if cv2.contourArea(contour) < 100:  # Ignore small contours (adjust as needed)
+        # Ignore small contours (adjust the size threshold as needed)
+        if cv2.contourArea(contour) < 100:
             continue
 
-        # Get the minimum enclosing circle
+        # Step 3: Get the minimum enclosing circle
         (x, y), radius = cv2.minEnclosingCircle(contour)
         
-        # Check if the detected contour is approximately round (i.e., a ball)
+        # Step 4: Check if the detected contour is approximately circular
         aspect_ratio = cv2.contourArea(contour) / (np.pi * (radius ** 2))  # Circularity check
         if aspect_ratio > 0.7:  # Adjust threshold for circularity (closer to 1 is more circular)
             # Draw the circle around the detected object
