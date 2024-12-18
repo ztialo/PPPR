@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from picamera2 import Picamera2
-# use bgr to detect white ball
 
 # Initialize Picamera2
 picam2 = Picamera2()
@@ -10,10 +9,9 @@ picam2.preview_configuration.main.format = "RGB888"
 picam2.preview_configuration.align()
 picam2.configure("preview")
 picam2.start()
-ball_coord = None
 
-# Function to detect white round ball
-def detect_ball():
+# Function to detect the white round ball
+def detect_ball(q):  # Now it takes a Queue as a parameter
     while True:
         # Capture image from Picamera2
         im = picam2.capture_array()
@@ -56,10 +54,8 @@ def detect_ball():
             cv2.circle(im_bgr, (center_x, center_y), int(largest_radius), (0, 255, 0), 2)  # Green circle
             cv2.circle(im_bgr, (center_x, center_y), 5, (0, 0, 255), -1)  # Red circle at the center
 
-            # Print the coordinates of the detected ball (if needed)
-            # print(f"Detected ball at: ({center_x}, {center_y})")
-            ball_coord = (center_x, center_y)
-            return ball_coord
+            # Send the coordinates to the Queue for real-time access
+            q.put((center_x, center_y))
 
         # Show the result with detected white ball
         cv2.imshow("White Ball Detection", im_bgr)
@@ -70,5 +66,3 @@ def detect_ball():
             break
 
     cv2.destroyAllWindows()
-
-
