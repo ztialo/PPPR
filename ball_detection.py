@@ -10,6 +10,7 @@ picam2.preview_configuration.main.format = "RGB888"
 picam2.preview_configuration.align()
 picam2.configure("preview")
 picam2.start()
+ball_coord = None
 
 # Function to detect white round ball
 def detect_ball():
@@ -56,7 +57,9 @@ def detect_ball():
             cv2.circle(im_bgr, (center_x, center_y), 5, (0, 0, 255), -1)  # Red circle at the center
 
             # Print the coordinates of the detected ball (if needed)
-            print(f"Detected ball at: ({center_x}, {center_y})")
+            # print(f"Detected ball at: ({center_x}, {center_y})")
+            ball_coord = (center_x, center_y)
+            return ball_coord
 
         # Show the result with detected white ball
         cv2.imshow("White Ball Detection", im_bgr)
@@ -68,5 +71,4 @@ def detect_ball():
 
     cv2.destroyAllWindows()
 
-# Call the function to start detecting
-detect_ball()
+
