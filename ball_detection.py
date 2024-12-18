@@ -54,4 +54,20 @@ def detect_ball(q: Queue):
                 saturation_value = hsv_value[1]
                 value_value = hsv_value[2]
 
-                # Check if the center of the object is c
+                # Check if the center of the object is close to white (HSV)
+                if lower_white[0] <= hue_value <= upper_white[0] and lower_white[1] <= saturation_value <= upper_white[1] and lower_white[2] <= value_value <= upper_white[2]:
+                    # Send the coordinates to the Queue for real-time access
+                    q.put((center_x, center_y))
+
+                    # Draw the largest detected circle and its center
+                    cv2.circle(im_bgr, (center_x, center_y), int(largest_radius), (0, 255, 0), 2)  # Green circle
+                    cv2.circle(im_bgr, (center_x, center_y), 5, (0, 0, 255), -1)  # Red circle at the center
+
+        # Optionally, you can show the feed for debugging
+        cv2.imshow("White Ball Detection", im_bgr)
+
+        # Exit on 'q' key
+        if cv2.waitKey(1) == ord('q'):
+            break
+
+    cv2.destroyAllWindows()
