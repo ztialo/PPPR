@@ -4,7 +4,7 @@ from picamera2 import Picamera2
 
 # Initialize Picamera2
 picam2 = Picamera2()
-picam2.preview_configuration.main.size = (1152, 648)
+picam2.preview_configuration.main.size = (576, 324)
 picam2.preview_configuration.main.format = "RGB888"
 picam2.preview_configuration.align()
 picam2.configure("preview")
@@ -12,7 +12,7 @@ picam2.start()
 
 # Define the HSV range for white color (with tolerance for greyness)
 lower_white = np.array([0, 0, 200])  # Lower bound: Hue=0 (white), Low saturation, High value
-upper_white = np.array([10, 50, 255])  # Upper bound: Slightly higher hue range (0-10), low saturation, high value
+upper_white = np.array([150, 40, 255])  # Upper bound: Slightly higher hue range (0-10), low saturation, high value
 
 while True:
     # Capture image from Picamera2
@@ -55,6 +55,9 @@ while True:
 
     # Show the result with detected white ball
     cv2.imshow("White Ball Detection", im_bgr)
+
+    # Show the mask
+    cv2.imshow("Mask", mask)
 
     # Exit on 'q' key
     if cv2.waitKey(1) == ord('q'):
