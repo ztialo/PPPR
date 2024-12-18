@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from picamera2 import Picamera2
+# use bgr to detect white ball
 
 # Initialize Picamera2
 picam2 = Picamera2()
