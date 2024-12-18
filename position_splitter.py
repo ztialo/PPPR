@@ -18,8 +18,9 @@ while True:
         ball_coordinates = coord_queue.get()  # Get the latest coordinates from the Queue
 
         x, y = ball_coordinates
+        current_time = time.time()
         if ball_coordinates:
-            if last_time - time.time() >= 0.5:
+            if current_time - last_time >= 0.5:
                 if x < 110:
                     print("ball at: LL")
                 elif x < 220:
@@ -30,6 +31,7 @@ while True:
                     print("ball at: R")
                 else :
                     print("ball at: RR")
+                last_time = current_time
 
             # Use the coordinates for further processing, e.g., move the robot
             # For example:
