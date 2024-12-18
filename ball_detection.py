@@ -36,7 +36,7 @@ while True:
         
         # Step 4: Check if the detected contour is approximately circular
         aspect_ratio = cv2.contourArea(contour) / (np.pi * (radius ** 2))  # Circularity check
-        if aspect_ratio > 0.7:  # Adjust threshold for circularity (closer to 1 is more circular)
+        if aspect_ratio > 0.4:  # Adjust threshold for circularity (closer to 1 is more circular)
             # Draw the circle around the detected object
             cv2.circle(im_bgr, (int(x), int(y)), int(radius), (0, 255, 0), 2)  # Green circle
 
