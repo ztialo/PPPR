@@ -1,49 +1,55 @@
 import cv2
 import numpy as np
+from picamera2 import Picamera2
 
-# Initialize the camera
-cap = cv2.VideoCapture(0)  # Use 0 for the default camera
+# Initialize Picamera2
+picam2 = Picamera2()
+picam2.preview_configuration.main.size = (1152, 648)
+picam2.preview_configuration.main.format = "RGB888"
+picam2.preview_configuration.align()
+picam2.configure("preview")
+picam2.start()
+
+# Define the HSV range for light blue (hue from 0 to 3)
+lower_hue = np.array([0, 150, 150])  # Lower bound of hue (0 to 3 range), adjust saturation and value
+upper_hue = np.array([3, 255, 255])  # Upper bound of hue (0 to 3 range), adjust saturation and value
 
 while True:
-    ret, frame = cap.read()
+    # Capture image from Picamera2
+    im = picam2.capture_array()
+    im_bgr = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)  # Convert RGB to BGR for OpenCV
+    hsv = cv2.cvtColor(im_bgr, cv2.COLOR_BGR2HSV)  # Convert the image to HSV
 
-    if not ret:
+    # Create a mask to detect the hue range from 0 to 3
+    mask = cv2.inRange(hsv, lower_hue, upper_hue)
+
+    # Apply the mask to the image
+    result = cv2.bitwise_and(im_bgr, im_bgr, mask=mask)
+
+    # Find contours in the mask
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    if contours:
+        # Get the largest contour
+        largest_contour = max(contours, key=cv2.contourArea)
+        
+        # Get the minimum enclosing circle and check if it's round
+        (x, y), radius = cv2.minEnclosingCircle(largest_contour)
+        if radius > 10:  # Minimum size for detection
+            # Draw the circle
+            cv2.circle(im_bgr, (int(x), int(y)), int(radius), (0, 255, 0), 2)  # Green circle
+
+            # Draw the center of the circle
+            cv2.circle(im_bgr, (int(x), int(y)), 5, (0, 0, 255), -1)  # Red circle at the center
+
+            # Optionally, print the radius and coordinates of the detected object
+            print(f"Object detected at (x, y): ({x}, {y}), Radius: {radius}")
+
+    # Show the result with detected light blue object
+    cv2.imshow("Light Blue Object Detection", im_bgr)
+
+    # Exit on 'q' key
+    if cv2.waitKey(1) == ord('q'):
         break
 
-    # Convert the frame to grayscale
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    # Apply Gaussian blur to reduce noise
-    blurred = cv2.GaussianBlur(gray, (15, 15), 0)
-
-    # Threshold to get a binary image
-    _, thresholded = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)
-
-    # Find contours in the thresholded image
-    contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    for contour in contours:
-        # Approximate the contour to a polygon
-        epsilon = 0.04 * cv2.arcLength(contour, True)
-        approx = cv2.approxPolyDP(contour, epsilon, True)
-
-        # If the approximation has 4 vertices (a circle), it is a round object
-        if len(approx) > 8:  # Circles will have more than 8 vertices
-            # Get the center and radius of the circle
-            (x, y), radius = cv2.minEnclosingCircle(contour)
-
-            # If the radius is above a threshold, it's likely a ping pong ball
-            if radius > 10:
-                # Draw the circle on the frame
-                cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 0), 2)
-
-    # Display the resulting frame
-    cv2.imshow("Ping Pong Ball Detection", frame)
-
-    # Exit on pressing 'q'
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-# Release the camera and close the window
-cap.release()
 cv2.destroyAllWindows()
