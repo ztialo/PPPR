@@ -30,7 +30,7 @@
       <geometry>
         <cylinder length="0.008" radius="0.040"/>  <!-- 80 mm diameter wheel-->
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.04 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <material name="black">
         <color rgba="0 0 0 1"/>
       </material>
@@ -39,7 +39,7 @@
       <geometry>
         <cylinder length="0.008" radius="0.040"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.04 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
     <inertial>
       <mass value="0.5"/>
@@ -47,11 +47,13 @@
     </inertial>
   </link>
   
-  <joint name="base_to_lwheel" type="fixed">
-    <parent link="base_link"/>
-    <child link="lwheel"/>
-    <origin xyz="0 0.115 0.046" rpy="1.5708 0 0"/>
-  </joint>
+<joint name="base_to_lwheel" type="continuous"> <!-- or revolute -->
+  <parent link="base_link"/>
+  <child link="lwheel"/>
+  <origin xyz="-0.05 0.115 0.046" rpy="-1.5708 0 0"/>
+  <axis xyz="0 0 1"/> <!-- Rotating around z-axis -->
+  <limit effort="1" velocity="1000"/>
+</joint>
   
   <!-- Right Wheel -->
   <link name="rwheel">
@@ -59,7 +61,7 @@
       <geometry>
         <cylinder length="0.008" radius="0.040"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.04 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <material name="black">
         <color rgba="0 0 0 1"/>
       </material>
@@ -68,7 +70,7 @@
       <geometry>
         <cylinder length="0.008" radius="0.040"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.04 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
     <inertial>
       <mass value="0.5"/>
@@ -76,11 +78,13 @@
     </inertial>
   </link>
   
-  <joint name="base_to_rwheel" type="fixed">
-    <parent link="base_link"/>
-    <child link="rwheel"/>
-    <origin xyz="0 -0.115 0.046" rpy="-1.5708 0 0"/>
-  </joint>
+<joint name="base_to_rwheel" type="continuous"> <!-- or revolute -->
+  <parent link="base_link"/>
+  <child link="rwheel"/>
+  <origin xyz="-0.05 -0.115 0.046" rpy="-1.5708 0 0"/>
+  <axis xyz="0 0 1"/> <!-- Rotating around z-axis -->
+  <limit effort="1" velocity="1000"/>
+</joint>
   
 <!-- caster wheel -->
 <link name="caster_wheel">

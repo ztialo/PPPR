@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<robot name="ping_pong_ball">
+
+  <link name="ball">
+  
+    <!-- Visual appearance -->
+    <visual>
+      <geometry>
+        <sphere radius="0.02"/> <!-- 40mm diameter -->
+      </geometry>
+      <material name="orange">
+        <color rgba="1 0.5 0 1"/> <!-- orange color -->
+      </material>
+    </visual>
+
+    <!-- Collision geometry -->
+    <collision>
+      <geometry>
+        <sphere radius="0.02"/>
+      </geometry>
+    </collision>
+
+    <!-- Inertial properties -->
+    <inertial>
+      <mass value="0.087"/> <!-- 870 grams -->
+      <inertia ixx="1e-6" iyy="1e-6" izz="1e-6" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+
+  </link>
+
+</robot>
