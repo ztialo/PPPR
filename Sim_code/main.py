@@ -1,69 +1,95 @@
+"""
+Author  : Zi Tao Li
+Date    : March 25, 2025
+Description: This file is the main running file for simulation
+"""
+
 import pybullet as p
 import pybullet_data
+import cv2
 import time
+import numpy as np
+import Globals
+import helperFunctions as hf
 from JointControl import DifferentialDriveRobot
-
-# Global Variable
-initial_speed = 50 # m/s
-initial_force = 5  # N
 
 def main():
     # Connect to physics server with GUI
     p.connect(p.GUI)
 
-    # initialize gravity
+    # initialize 
     p.setGravity(0, 0, -9.8)
+    Globals.debug_init()
 
     # Load plane and robot
     p.setAdditionalSearchPath(pybullet_data.getDataPath())  # for default URDFs
     p.loadURDF("plane.urdf")
     robot = DifferentialDriveRobot("urdf/diff_drive.urdf", [0,0,0.1])
     b1 = p.loadURDF("urdf/ping_pong.urdf", [0.8,0,0.2])
+    Globals.balls.append(b1)
 
     # print joints
     robot.print_joints()
     robot.left_wheel_joint_index = 0
     robot.right_wheel_joint_index = 1
-    
-    # left and right wheel control: MOVING FORWARD
-    robot.forward(initial_speed, initial_force)
-    
-    # adding a wheel control slider
-    left_wheel_slider = p.addUserDebugParameter("left wheel speed", -50, 50, initial_speed)
-    right_wheel_slider = p.addUserDebugParameter("right wheel speed", -50, 50, initial_speed)  
 
-    
-    score = 0
-    score_text_id = p.addUserDebugText(f"Collected: {score}", [0, 0, 1.5], textSize=2, lifeTime=0)
+    # robot.forward(initial_speed, initial_force)
 
-    
-
-    
+    run_flag = 0
     # Run simulation
     for i in range(1000000):
         p.stepSimulation()
         
-        # read left wheel and right wheel speed input from GUI
-        if i > 100 and i % 100 == 0: # delay read time, make sure everything is initialize correctly first
-            lw_speed = p.readUserDebugParameter(left_wheel_slider)
-            rw_speed = p.readUserDebugParameter(right_wheel_slider)
+        if i > 50 and run_flag == 0:
+            print("Running...")
+            robot.forward_for(1)
+            run_flag = 1
         
-            # update wheel speed 
-            robot.wheel_control(robot.left_wheel_joint_index, p.VELOCITY_CONTROL, lw_speed, initial_force)
-            robot.wheel_control(robot.right_wheel_joint_index, p.VELOCITY_CONTROL, rw_speed, initial_force)
+        # # get robot position
+        # pos, orn = p.getBasePositionAndOrientation(robot.id)
+        
+        # rot_matrix = p.getMatrixFromQuaternion(orn) # orientation is in quaternion angle
+        # camera_forward = [rot_matrix[0], rot_matrix[3], rot_matrix[6]]
+        
+        # # Place camera on the scanner position
+        # # Set eye slightly forward and above the robot
+        # camera_eye = [pos[0] + 0.1 * camera_forward[0],
+        #             pos[1] + 0.1 * camera_forward[1],
+        #             pos[2] + 0.1]  # slightly above base
+
+        # # Look ahead in same direction
+        # camera_target = [camera_eye[0] + camera_forward[0],
+        #                 camera_eye[1] + camera_forward[1],
+        #                 camera_eye[2] + camera_forward[2]]
+
+
+        # view_matrix = p.computeViewMatrix(cameraEyePosition=camera_eye,
+        #                                 cameraTargetPosition=camera_target,
+        #                                 cameraUpVector=[0, 0, 1])
+        
+        # proj_matrix = p.computeProjectionMatrixFOV(fov, aspect, near, far)
+        
+        # # Get camera image
+        # _, _, rgb_img, _, _ = p.getCameraImage(
+        #     width=width,
+        #     height=height,
+        #     viewMatrix=view_matrix,
+        #     projectionMatrix=proj_matrix
+        # )
+        
+        # # Convert to numpy array
+        # frame = np.reshape(rgb_img, (height, width, 4)).astype(np.uint8)  # 4 = RGBA
+        # frame = frame[:, :, :3]  # Drop alpha channel
+        
+        # # read left wheel and right wheel speed input from GUI
+        # if i > 100 and i % 100 == 0: # delay read time, make sure everything is initialize correctly first
+        #     hf.slider_control(robot)
         
         # constantly checks for ball 1 contact
-        b1contacts = p.getContactPoints(bodyA=robot.id, bodyB=b1)
-        if b1contacts:
-            print("Ball touched!")
-            p.removeBody(b1)
-            score += 1
-            
-            # update score 
-            p.removeUserDebugItem(score_text_id)  
-            score_text_id = p.addUserDebugText(f"Collected: {score}", [0, 0, 1.5], textSize=2, lifeTime=0)
-            # robot.backward(initial_speed, initial_force)
-            
+        if (Globals.score != hf.checkContact(robot, Globals.balls)):
+            # score changed so update score 
+            p.removeUserDebugItem(Globals.score_text_id)  
+            Globals.score_text_id = p.addUserDebugText(f"Collected: {Globals.score}", [0, 0, 1.5], textSize=2, lifeTime=0)
         
         time.sleep(1/240)  # Slow it down to real-time
 
