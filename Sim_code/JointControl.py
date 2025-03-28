@@ -80,7 +80,7 @@ class DifferentialDriveRobot:
                     self.forward(25, force/2) # slow down for stop
 
                 if moved_distance >= dist:
-                    print(f"✅ Reached target distance: {moved_distance:.3f} m")
+                    # print(f"✅ Reached target distance: {moved_distance:.3f} m")
 
                     self.stop(force*10) # 5 times the force to stop the robot?
                     return
@@ -150,7 +150,7 @@ class DifferentialDriveRobot:
             
             # hf.getCamera(self)
             # slow down the position check
-            if i % 5 == 0:
+            if i % 10 == 0:
                 # check current yaw
                 _, orn = p.getBasePositionAndOrientation(self.id)
                 current_yaw = p.getEulerFromQuaternion(orn)[2]
@@ -178,4 +178,5 @@ class DifferentialDriveRobot:
         for i in range(target_range):
             
             time.sleep(1/240)  # Slow it down to real-time 
+        
         

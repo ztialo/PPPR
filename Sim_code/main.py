@@ -25,34 +25,21 @@ def main():
     p.setAdditionalSearchPath(pybullet_data.getDataPath())  # for default URDFs
     p.loadURDF("plane.urdf")
     robot = DifferentialDriveRobot("urdf/diff_drive.urdf", [0,0,0.1])
-    b1 = p.loadURDF("urdf/ping_pong.urdf", [0.8,0.5,0.05])
-    Globals.balls.append(b1)
+    hf.addBalls(10)
 
     # print joints
     robot.print_joints()
     robot.left_wheel_joint_index = 0
     robot.right_wheel_joint_index = 1
-
-    # robot.forward(initial_speed, initial_force)
-
-    run_flag = 0
+    
+    # initial pos for robot path tracing
+    prev_pos = p.getBasePositionAndOrientation(robot.id)[0]  # starting position
+    
     # Run simulation
     for i in range(1000000):
         p.stepSimulation()
         
-        # if i > 50 and run_flag == 0:
-        #     print("Running...")
-        #     robot.forward_for(1)
-            
-        #     robot.wait(500) # wait for 500 ms (0.5s)
-            
-        #     robot.right_for(180)
-            
-        #     # robot.forward_for(1)
-        #     # robot.left_for(180)
-        #     run_flag = 1
-        
-        if i % 5 == 0:
+        if i % 6 == 0:
             frame = hf.getCamera(robot)  # Get camera image and update the view, this will be used for image processing
             mask, offset, annotated_img = hf.findBall(frame)
             
@@ -61,15 +48,18 @@ def main():
             cv2.waitKey(1)
             
             if offset != None:
-                threshold = 20
+                threshold = 30
                 if abs(offset) < threshold:
-                    robot.forward_for(0.25)
+                    robot.forward_for(0.35)
                 elif offset > threshold:
                     robot.right_for(5)
                 else:
                     robot.left_for(5)
-
-            
+            else:
+                robot.right_for(45) # turn to search for balls
+                
+        curr_pos = hf.drawPath(robot, prev_pos)
+        prev_pos = curr_pos      
             
         # # read left wheel and right wheel speed input from GUI
         # if i > 100 and i % 100 == 0: # delay read time, make sure everything is initialize correctly first

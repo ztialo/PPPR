@@ -9,15 +9,26 @@ import Globals
 import pybullet as p
 import numpy as np
 import cv2
+import random
 
 def checkContact(robot, balls):
-    b1contacts = p.getContactPoints(bodyA=robot.id, bodyB=balls[0])
-    if b1contacts:
-        print("Ball touched!")
-        p.removeBody(balls[0])
-        Globals.score += 1
+    for i in range(len(balls)):
+        ball_contacts = p.getContactPoints(bodyA=robot.id, bodyB=balls[i])
+        
+        if ball_contacts:
+            print("Ball touched!")
+            p.removeBody(balls[i])
+            Globals.score += 1
         
     return Globals.score
+
+# Function to add balls in random locations in simulation
+def addBalls(n):
+    for i in range(1, n+1):
+        x = random.uniform(-2, 2)  # Random x position
+        y = random.uniform(-2, 2)  # Random y position
+        ball_id = p.loadURDF("urdf/ping_pong.urdf", [x, y, 0.05])
+        Globals.balls.append(ball_id)
     
 def slider_control(robot):
     lw_speed = p.readUserDebugParameter(Globals.left_wheel_slider)
@@ -83,7 +94,7 @@ def findBall(frame):
         largest = max(contours, key=cv2.contourArea)
         (x, y), radius = cv2.minEnclosingCircle(largest)
 
-        if radius > 3:
+        if radius > 0.5:
             ball_center = (int(x), int(y))
             cv2.circle(output_img, ball_center, int(radius), (0, 255, 0), 2)
 
@@ -91,3 +102,21 @@ def findBall(frame):
             offset = ball_center[0] - img_center_x
 
     return mask, offset, output_img
+
+def drawPath(robot, prev_pos):
+    # Get current position
+    curr_pos = p.getBasePositionAndOrientation(robot.id)[0]
+    
+    z_offset = 0.05  # or 0.1 meters above ground
+
+    # Adjust positions
+    prev_pos_with_offset = (prev_pos[0], prev_pos[1], prev_pos[2] + z_offset)
+    curr_pos_with_offset = (curr_pos[0], curr_pos[1], curr_pos[2] + z_offset)
+
+    # Draw a line from previous to current
+    p.addUserDebugLine(prev_pos_with_offset, curr_pos_with_offset,
+                    lineColorRGB=[1, 0.5, 0],  # orange
+                    lineWidth=10.0,            # thicker line
+                    lifeTime=0)               # stays forever
+
+    return curr_pos  # return current position for update
