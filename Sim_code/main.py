@@ -25,7 +25,7 @@ def main():
     p.setAdditionalSearchPath(pybullet_data.getDataPath())  # for default URDFs
     p.loadURDF("plane.urdf")
     robot = DifferentialDriveRobot("urdf/diff_drive.urdf", [0,0,0.1])
-    b1 = p.loadURDF("urdf/ping_pong.urdf", [0.8,0,0.2])
+    b1 = p.loadURDF("urdf/ping_pong.urdf", [0.8,0.5,0.05])
     Globals.balls.append(b1)
 
     # print joints
@@ -40,47 +40,37 @@ def main():
     for i in range(1000000):
         p.stepSimulation()
         
-        if i > 50 and run_flag == 0:
-            print("Running...")
-            robot.forward_for(1)
-            run_flag = 1
+        # if i > 50 and run_flag == 0:
+        #     print("Running...")
+        #     robot.forward_for(1)
+            
+        #     robot.wait(500) # wait for 500 ms (0.5s)
+            
+        #     robot.right_for(180)
+            
+        #     # robot.forward_for(1)
+        #     # robot.left_for(180)
+        #     run_flag = 1
         
-        # # get robot position
-        # pos, orn = p.getBasePositionAndOrientation(robot.id)
-        
-        # rot_matrix = p.getMatrixFromQuaternion(orn) # orientation is in quaternion angle
-        # camera_forward = [rot_matrix[0], rot_matrix[3], rot_matrix[6]]
-        
-        # # Place camera on the scanner position
-        # # Set eye slightly forward and above the robot
-        # camera_eye = [pos[0] + 0.1 * camera_forward[0],
-        #             pos[1] + 0.1 * camera_forward[1],
-        #             pos[2] + 0.1]  # slightly above base
+        if i % 5 == 0:
+            frame = hf.getCamera(robot)  # Get camera image and update the view, this will be used for image processing
+            mask, offset, annotated_img = hf.findBall(frame)
+            
+            # ball detection debug
+            cv2.imshow("Ball Detection", annotated_img)
+            cv2.waitKey(1)
+            
+            if offset != None:
+                threshold = 20
+                if abs(offset) < threshold:
+                    robot.forward_for(0.25)
+                elif offset > threshold:
+                    robot.right_for(5)
+                else:
+                    robot.left_for(5)
 
-        # # Look ahead in same direction
-        # camera_target = [camera_eye[0] + camera_forward[0],
-        #                 camera_eye[1] + camera_forward[1],
-        #                 camera_eye[2] + camera_forward[2]]
-
-
-        # view_matrix = p.computeViewMatrix(cameraEyePosition=camera_eye,
-        #                                 cameraTargetPosition=camera_target,
-        #                                 cameraUpVector=[0, 0, 1])
-        
-        # proj_matrix = p.computeProjectionMatrixFOV(fov, aspect, near, far)
-        
-        # # Get camera image
-        # _, _, rgb_img, _, _ = p.getCameraImage(
-        #     width=width,
-        #     height=height,
-        #     viewMatrix=view_matrix,
-        #     projectionMatrix=proj_matrix
-        # )
-        
-        # # Convert to numpy array
-        # frame = np.reshape(rgb_img, (height, width, 4)).astype(np.uint8)  # 4 = RGBA
-        # frame = frame[:, :, :3]  # Drop alpha channel
-        
+            
+            
         # # read left wheel and right wheel speed input from GUI
         # if i > 100 and i % 100 == 0: # delay read time, make sure everything is initialize correctly first
         #     hf.slider_control(robot)

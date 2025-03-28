@@ -27,7 +27,7 @@
   <!-- Left Wheel -->
   <link name="lwheel">
   <contact>
-      <lateral_friction value="1"/>
+      <lateral_friction value="2"/>
   </contact>
     <visual>
       <geometry>
@@ -61,7 +61,7 @@
   <!-- Right Wheel -->
   <link name="rwheel">
   <contact>
-      <lateral_friction value="1"/>
+      <lateral_friction value="2"/>
   </contact>
     <visual>
       <geometry>
@@ -94,6 +94,9 @@
   
 <!-- caster wheel -->
 <link name="caster_wheel">
+  <contact>
+      <lateral_friction value="0.5"/>
+  </contact>
   <visual>
     <geometry>
       <cylinder length="0.01" radius="0.009525"/> <!-- 0.01905 m diameter -->

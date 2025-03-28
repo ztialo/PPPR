@@ -7,6 +7,8 @@ Description: This file contains all of the helper functions
 
 import Globals
 import pybullet as p
+import numpy as np
+import cv2
 
 def checkContact(robot, balls):
     b1contacts = p.getContactPoints(bodyA=robot.id, bodyB=balls[0])
@@ -24,3 +26,68 @@ def slider_control(robot):
     # update wheel speed 
     robot.wheel_control(robot.left_wheel_joint_index, p.VELOCITY_CONTROL, lw_speed, Globals.initial_force)
     robot.wheel_control(robot.right_wheel_joint_index, p.VELOCITY_CONTROL, rw_speed, Globals.initial_force)
+    
+def getCamera(robot):
+    # get robot position
+        pos, orn = p.getBasePositionAndOrientation(robot.id)
+        
+        rot_matrix = p.getMatrixFromQuaternion(orn) # orientation is in quaternion angle
+        camera_forward = [rot_matrix[0], rot_matrix[3], rot_matrix[6]]
+        
+        # Place camera on the scanner position
+        # Set eye slightly forward and above the robot
+        camera_eye = [pos[0] + 0.1 * camera_forward[0],
+                    pos[1] + 0.1 * camera_forward[1],
+                    pos[2] + 0.1]  # slightly above base
+
+        # Look ahead in same direction
+        camera_target = [camera_eye[0] + camera_forward[0],
+                        camera_eye[1] + camera_forward[1],
+                        camera_eye[2] + camera_forward[2]]
+
+
+        view_matrix = p.computeViewMatrix(cameraEyePosition=camera_eye,
+                                        cameraTargetPosition=camera_target,
+                                        cameraUpVector=[0, 0, 1])
+        
+        proj_matrix = p.computeProjectionMatrixFOV(Globals.fov, Globals.aspect, Globals.near, Globals.far)
+        
+        # Get camera image
+        _, _, rgb_img, _, _ = p.getCameraImage(
+            width=Globals.width,
+            height=Globals.height,
+            viewMatrix=view_matrix,
+            projectionMatrix=proj_matrix
+        )
+        
+        # Convert to numpy array
+        frame = np.reshape(rgb_img, (Globals.height, Globals.width, 4)).astype(np.uint8)  # 4 = RGBA
+        frame = frame[:, :, :3]  # Drop alpha channel
+        return frame
+        
+def findBall(frame):
+    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
+
+    lower_ball = np.array([12, 200, 140])
+    upper_ball = np.array([18, 255, 255])
+
+    mask = cv2.inRange(hsv, lower_ball, upper_ball)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    offset = None
+    output_img = frame_bgr.copy()
+
+    if contours:
+        largest = max(contours, key=cv2.contourArea)
+        (x, y), radius = cv2.minEnclosingCircle(largest)
+
+        if radius > 3:
+            ball_center = (int(x), int(y))
+            cv2.circle(output_img, ball_center, int(radius), (0, 255, 0), 2)
+
+            img_center_x = frame.shape[1] // 2
+            offset = ball_center[0] - img_center_x
+
+    return mask, offset, output_img
