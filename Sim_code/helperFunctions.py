@@ -10,6 +10,8 @@ import pybullet as p
 import numpy as np
 import cv2
 import random
+import math
+
 
 def checkContact(robot, balls):
     for i in range(len(balls)):
@@ -22,8 +24,13 @@ def checkContact(robot, balls):
         
     return Globals.score
 
+def addBalls_at(x, y):
+    ball_id = p.loadURDF("urdf/ping_pong.urdf", [x, y, 0.05])
+    Globals.balls.append(ball_id)
+    return ball_id
+
 # Function to add balls in random locations in simulation
-def addBalls(n):
+def addBalls_rand(n):
     for i in range(1, n+1):
         x = random.uniform(-2, 2)  # Random x position
         y = random.uniform(-2, 2)  # Random y position
@@ -54,7 +61,7 @@ def getCamera(robot):
         # Look ahead in same direction
         camera_target = [camera_eye[0] + camera_forward[0],
                         camera_eye[1] + camera_forward[1],
-                        camera_eye[2] + camera_forward[2]]
+                        camera_eye[2] + camera_forward[2]-0.25]
 
 
         view_matrix = p.computeViewMatrix(cameraEyePosition=camera_eye,
@@ -103,6 +110,53 @@ def findBall(frame):
 
     return mask, offset, output_img
 
+def measureBallDistance(frame, heading):
+    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
+
+    lower_ball = np.array([12, 200, 140])
+    upper_ball = np.array([18, 255, 255])
+
+    mask = cv2.inRange(hsv, lower_ball, upper_ball)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    if contours:
+        # if a ball is detected, collect its position relative to the robot and its size
+        detected_balls = []
+        for contour in contours:
+            (x, y), radius = cv2.minEnclosingCircle(contour)
+            if radius > 0.5: 
+                ball_center = (x, y)
+                offset_x = ball_center[0] - (frame.shape[1] // 2)  # offset from center of the image
+                offset_y = ball_center[1] - (frame.shape[0] // 2)  # offset from center of the image
+                
+                angle = np.arctan2(offset_y, offset_x)
+                angle_deg = np.rad2deg(angle)  # convert to degrees
+                # Adjust angle based on robot heading
+                angle_deg = (angle_deg + heading) % 360
+                
+                distance = calc_dist(radius)  # Euclidean distance from center
+                lateral_offset_x = estimate_lateral_offset(distance, offset_x, _, _)
+
+                detected_balls.append({
+                    'distance': distance,
+                    'radius': radius,
+                    'camera_offset_x': offset_x,
+                    'lateral_offset_x': lateral_offset_x
+                })
+        return detected_balls
+    else:
+        return None
+
+def calc_dist(radius):
+    # the contant k is the inverse proportionality constant for the distance calculation
+    a = 7.2622
+    b = 1.6356
+    distance = a / (radius + b)
+    
+    return distance
+
 def drawPath(robot, prev_pos):
     # Get current position
     curr_pos = p.getBasePositionAndOrientation(robot.id)[0]
@@ -120,3 +174,12 @@ def drawPath(robot, prev_pos):
                     lifeTime=0)               # stays forever
 
     return curr_pos  # return current position for update
+
+def estimate_lateral_offset(distance, camera_offset_px, image_width=320, fov_deg=60):
+    fov_rad = np.radians(fov_deg)
+    angle_per_pixel = fov_rad / image_width
+    angle = camera_offset_px * angle_per_pixel
+    lateral_offset = np.tan(angle) * distance
+    lateral_offset = lateral_offset[0][0][0]
+    return lateral_offset
+

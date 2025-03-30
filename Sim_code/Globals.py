@@ -13,6 +13,7 @@ score = 0
 
 # object lists
 balls = []
+detected_balls = []
 
 # camera variables
 width, height = 320, 240

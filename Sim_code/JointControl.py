@@ -150,7 +150,7 @@ class DifferentialDriveRobot:
             
             # hf.getCamera(self)
             # slow down the position check
-            if i % 10 == 0:
+            if i % 5 == 0:
                 # check current yaw
                 _, orn = p.getBasePositionAndOrientation(self.id)
                 current_yaw = p.getEulerFromQuaternion(orn)[2]
@@ -161,7 +161,7 @@ class DifferentialDriveRobot:
                 if ((delta_yaw >= 0.50*abs(angle_rad)) and (delta_yaw < abs(angle_rad))):
                     self.turn_right(50/4, force/2)
                     
-                if delta_yaw >= abs(angle_rad)*0.965: # 0.965 is the turn overshoot bias
+                if delta_yaw >= abs(angle_rad)*0.7: # 0.875 is the turn overshoot bias for 45 degrees turn
                     self.stop(force*10)
                     return
             
