@@ -128,22 +128,23 @@ def measureBallDistance(frame, heading):
             (x, y), radius = cv2.minEnclosingCircle(contour)
             if radius > 0.5: 
                 ball_center = (x, y)
-                offset_x = ball_center[0] - (frame.shape[1] // 2)  # offset from center of the image
+                camera_offset_px = ball_center[0] - (frame.shape[1] // 2)  # offset from center of the image
                 offset_y = ball_center[1] - (frame.shape[0] // 2)  # offset from center of the image
                 
-                angle = np.arctan2(offset_y, offset_x)
+                angle = np.arctan2(offset_y, camera_offset_px)
                 angle_deg = np.rad2deg(angle)  # convert to degrees
                 # Adjust angle based on robot heading
                 angle_deg = (angle_deg + heading) % 360
                 
                 distance = calc_dist(radius)  # Euclidean distance from center
-                lateral_offset_x = estimate_lateral_offset(distance, offset_x, _, _)
+                lateral_offset_x = estimate_lateral_offset(distance, camera_offset_px)
 
+                y_coord = np.sqrt(distance**2 - lateral_offset_x**2)  # y coordinate in the robot's frame
                 detected_balls.append({
                     'distance': distance,
                     'radius': radius,
-                    'camera_offset_x': offset_x,
-                    'lateral_offset_x': lateral_offset_x
+                    'camera_offset_px': camera_offset_px,
+                    'coordinates': (lateral_offset_x, y_coord),  # y coordinate in the robot's frame
                 })
         return detected_balls
     else:
@@ -175,11 +176,10 @@ def drawPath(robot, prev_pos):
 
     return curr_pos  # return current position for update
 
-def estimate_lateral_offset(distance, camera_offset_px, image_width=320, fov_deg=60):
+def estimate_lateral_offset(distance, camera_offset_px, image_width=320, fov_deg=Globals.fov):
     fov_rad = np.radians(fov_deg)
     angle_per_pixel = fov_rad / image_width
     angle = camera_offset_px * angle_per_pixel
     lateral_offset = np.tan(angle) * distance
-    lateral_offset = lateral_offset[0][0][0]
     return lateral_offset
 

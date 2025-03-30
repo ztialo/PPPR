@@ -127,9 +127,10 @@ def depthMeas():
                     for ball in balls_found:
                         Globals.detected_balls.append(ball)
             
-            if(init_angle == 0):
-                for i, ball in enumerate(Globals.detected_balls):
-                    print(f"Ball {i+1}: distance = {ball['distance']:.3f}, radius = {ball['radius']:.3f}, camera_offset_x = ={ball['camera_offset_x']:.3f}, lateral_offset_x = {ball['lateral_offset_x']:.3f}")
+            for i, ball in enumerate(Globals.detected_balls):
+                x, y = ball['coordinates']
+                print(f"Ball {i+1}: distance = {ball['distance']:.3f}, radius = {ball['radius']:.3f}, "
+                    f"camera_offset_px = {ball['camera_offset_px']:.1f}, coordinates = ({x:.3f}, {y:.3f})")
 
             
             # # ball detection debug
