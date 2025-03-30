@@ -21,13 +21,15 @@ def main():
 
     # initialize 
     p.setGravity(0, 0, -9.8)
-    Globals.debug_init()
+    # Globals.debug_init()
 
     # Load plane and robot
     p.setAdditionalSearchPath(pybullet_data.getDataPath())  # for default URDFs
     p.loadURDF("plane.urdf")
     robot = DifferentialDriveRobot("urdf/diff_drive.urdf", [0,0,0.1])
-    ab.addBalls_rand(10)
+    # ab.addBalls_rand(10)
+    # ab.fourCoordTest()
+    ab.tenBallTest()
 
     # print joints
     robot.print_joints()
@@ -41,37 +43,33 @@ def main():
     for i in range(1000000):
         p.stepSimulation()
         
-        if i % 6 == 0:
-            frame = hf.getCamera(robot)  # Get camera image and update the view, this will be used for image processing
-            mask, offset, annotated_img = hf.findBall(frame)
+        if i == 30:
+            depthMeas.Map_scan(robot)
+            world_map = []
+            # depthMeas.print_balls(Globals.detected_balls)
+            world_map = depthMeas.extract_coords(Globals.detected_balls)
             
-            # ball detection debug
-            cv2.imshow("Ball Detection", annotated_img)
-            cv2.waitKey(1)
+            # add currrent position of the robot to the world_map
+            robot_pos = p.getBasePositionAndOrientation(robot.id)[0]
+            world_map.append((round(robot_pos[0], 3), round(robot_pos[1], 3)))
+            print("world map: ", world_map)
             
-            if offset != None:
-                threshold = 30
-                if abs(offset) < threshold:
-                    robot.forward_for(0.35)
-                elif offset > threshold:
-                    robot.right_for(5)
-                else:
-                    robot.left_for(5)
-            else:
-                robot.right_for(45) # turn to search for balls
+        # if i % 5 == 0:
+        #     frame = hf.getCamera(robot)  # Get camera image and update the view, this will be used for image processing
+        #     mask, offset, annotated_img = hf.findBall(frame)
+            
+        #     # ball detection debug
+        #     cv2.imshow("Ball Detection", annotated_img)
+        #     cv2.waitKey(1)
                 
-        curr_pos = hf.drawPath(robot, prev_pos)
-        prev_pos = curr_pos      
-            
-        # # read left wheel and right wheel speed input from GUI
-        # if i > 100 and i % 100 == 0: # delay read time, make sure everything is initialize correctly first
-        #     hf.slider_control(robot)
-        
+        # curr_pos = hf.drawPath(robot, prev_pos)
+        # prev_pos = curr_pos      
+
         # constantly checks for ball 1 contact
         if (Globals.score != hf.checkContact(robot, Globals.balls)):
             # score changed so update score 
             p.removeUserDebugItem(Globals.score_text_id)  
-            Globals.score_text_id = p.addUserDebugText(f"Collected: {Globals.score}", [0, 0, 1.5], textSize=2, lifeTime=0)
+            # Globals.score_text_id = p.addUserDebugText(f"Collected: {Globals.score}", [0, 0, 1.5], textSize=2, lifeTime=0)
         
         time.sleep(1/240)  # Slow it down to real-time
 
@@ -83,6 +81,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    depthMeas.Test()
+    main()
+    # depthMeas.Test()
 
