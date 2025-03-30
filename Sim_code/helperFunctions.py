@@ -23,19 +23,6 @@ def checkContact(robot, balls):
             Globals.score += 1
         
     return Globals.score
-
-def addBalls_at(x, y):
-    ball_id = p.loadURDF("urdf/ping_pong.urdf", [x, y, 0.05])
-    Globals.balls.append(ball_id)
-    return ball_id
-
-# Function to add balls in random locations in simulation
-def addBalls_rand(n):
-    for i in range(1, n+1):
-        x = random.uniform(-2, 2)  # Random x position
-        y = random.uniform(-2, 2)  # Random y position
-        ball_id = p.loadURDF("urdf/ping_pong.urdf", [x, y, 0.05])
-        Globals.balls.append(ball_id)
     
 def slider_control(robot):
     lw_speed = p.readUserDebugParameter(Globals.left_wheel_slider)
@@ -110,7 +97,7 @@ def findBall(frame):
 
     return mask, offset, output_img
 
-def measureBallDistance(frame, heading):
+def measureBallDistance(frame, heading, robot_x, robot_y):
     frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
 
@@ -120,7 +107,9 @@ def measureBallDistance(frame, heading):
     mask = cv2.inRange(hsv, lower_ball, upper_ball)
 
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
     
+    print(f"Heading: {heading:.2f} degrees")
     if contours:
         # if a ball is detected, collect its position relative to the robot and its size
         detected_balls = []
@@ -138,13 +127,21 @@ def measureBallDistance(frame, heading):
                 
                 distance = calc_dist(radius)  # Euclidean distance from center
                 lateral_offset_x = estimate_lateral_offset(distance, camera_offset_px)
-
                 y_coord = np.sqrt(distance**2 - lateral_offset_x**2)  # y coordinate in the robot's frame
+                
+                heading_rad = np.deg2rad(heading)
+                x_local = lateral_offset_x
+                y_local = y_coord
+                
+                x_world = robot_x + (x_local * np.cos(heading_rad)) - (y_local * np.sin(heading_rad))
+                y_world = robot_y + (x_local * np.sin(heading_rad)) + (y_local * np.cos(heading_rad))
+
                 detected_balls.append({
                     'distance': distance,
                     'radius': radius,
                     'camera_offset_px': camera_offset_px,
-                    'coordinates': (lateral_offset_x, y_coord),  # y coordinate in the robot's frame
+                    'local_coord': (x_local, y_local),  # y coordinate in the robot's frame
+                    'world_coord': (x_world, y_world)  # world coordinates
                 })
         return detected_balls
     else:
@@ -183,3 +180,5 @@ def estimate_lateral_offset(distance, camera_offset_px, image_width=320, fov_deg
     lateral_offset = np.tan(angle) * distance
     return lateral_offset
 
+def degreeIn360(angle):
+    return (angle + 360) % 360

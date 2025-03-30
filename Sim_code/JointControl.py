@@ -92,85 +92,85 @@ class DifferentialDriveRobot:
             
             time.sleep(1/240)  # Slow it down to real-time
 
-    def left_for(self, angle):
-        # convert angle from degree to rad
-        angle_rad = np.deg2rad(angle)
+    def left_for(self, angle_deg):
+        angle_rad = np.deg2rad(angle_deg)
         
-        # get current position, calculate the difference and stop when reach target distance
         _, orn = p.getBasePositionAndOrientation(self.id)
         start_yaw = p.getEulerFromQuaternion(orn)[2]
-        
-        target_yaw = start_yaw + angle_rad
-        target_yaw = (target_yaw + np.pi) % (2 * np.pi) - np.pi  # keep in [-π, π]
         
         force = 10
         self.turn_left(50, force)
+
         for i in range(10000):
             p.stepSimulation()
-            
-            # hf.getCamera(self)
-            # slow down the position check
+
             if i % 5 == 0:
-                # check current yaw
                 _, orn = p.getBasePositionAndOrientation(self.id)
                 current_yaw = p.getEulerFromQuaternion(orn)[2]
 
-                # check if target reached
-                delta_yaw = abs((current_yaw - start_yaw + np.pi) % (2 * np.pi) - np.pi)
+                # Signed difference: [-π, π]
+                delta_yaw = (current_yaw - start_yaw + np.pi) % (2 * np.pi) - np.pi
 
-                if delta_yaw > abs(angle_rad) and delta_yaw < abs(angle_rad):
-                    self.turn_left(50/4, force/2)
+                if delta_yaw >= 0.3 * angle_rad:
+                    self.turn_left(15, force / 3)
+                
+                if delta_yaw >= angle_rad:
+                    # Brief reverse to cancel drift
+                    self.turn_right(20, force * 3)
+                    for _ in range(10):
+                        p.stepSimulation()
+                        time.sleep(1 / 240)
                     
-                if delta_yaw >= abs(angle_rad): # 0.2 is the turn overshoot bias
-                    self.stop(force*10)
+                    self.stop(force * 10)
                     return
-            
-            if(Globals.score != hf.checkContact(self, Globals.balls)):
-                # score changed so update score 
+
+            # optional: keep updating ball contact, etc.
+            if Globals.score != hf.checkContact(self, Globals.balls):
                 p.removeUserDebugItem(Globals.score_text_id)  
-                Globals.score_text_id = p.addUserDebugText(f"Collected: {Globals.score }", [0, 0, 1.5], textSize=2, lifeTime=0)
-            
-            time.sleep(1/240)  # Slow it down to real-time
-        
-    def right_for(self, angle):
-        # convert angle from degree to rad
-        angle_rad = np.deg2rad(angle)
-        
-        # get current position, calculate the difference and stop when reach target distance
+                Globals.score_text_id = p.addUserDebugText(f"Collected: {Globals.score}", [0, 0, 1.5], textSize=2, lifeTime=0)
+
+            time.sleep(1 / 240)
+
+    def right_for(self, angle_deg):
+        angle_rad = np.deg2rad(angle_deg)
+
         _, orn = p.getBasePositionAndOrientation(self.id)
         start_yaw = p.getEulerFromQuaternion(orn)[2]
-        
-        target_yaw = start_yaw + angle_rad
-        target_yaw = (target_yaw + np.pi) % (2 * np.pi) - np.pi  # keep in [-π, π]
-        
+
         force = 10
         self.turn_right(50, force)
+
         for i in range(10000):
             p.stepSimulation()
-            
-            # hf.getCamera(self)
-            # slow down the position check
+
             if i % 5 == 0:
-                # check current yaw
                 _, orn = p.getBasePositionAndOrientation(self.id)
                 current_yaw = p.getEulerFromQuaternion(orn)[2]
 
-                # check if target reached
-                delta_yaw = abs((current_yaw - start_yaw + np.pi) % (2 * np.pi) - np.pi)
+                # Signed difference: [-π, π]
+                delta_yaw = (current_yaw - start_yaw + np.pi) % (2 * np.pi) - np.pi
 
-                if ((delta_yaw >= 0.50*abs(angle_rad)) and (delta_yaw < abs(angle_rad))):
-                    self.turn_right(50/4, force/2)
-                    
-                if delta_yaw >= abs(angle_rad)*0.7: # 0.875 is the turn overshoot bias for 45 degrees turn
-                    self.stop(force*10)
+                if delta_yaw <= -0.3 * angle_rad:
+                    self.turn_right(15, force / 1.8)
+
+                if delta_yaw <= -angle_rad:
+                    # Brief reverse torque to cancel drift
+                    self.turn_left(20, force * 2.5)
+                    for _ in range(10):
+                        p.stepSimulation()
+                        time.sleep(1 / 240)
+
+                    self.stop(force * 10)
                     return
-            
-            if(Globals.score != hf.checkContact(self, Globals.balls)):
-                # score changed so update score 
-                p.removeUserDebugItem(Globals.score_text_id)  
-                Globals.score_text_id = p.addUserDebugText(f"Collected: {Globals.score }", [0, 0, 1.5], textSize=2, lifeTime=0)
-            
-            time.sleep(1/240)  # Slow it down to real-time    
+
+            # optional: update score
+            if Globals.score != hf.checkContact(self, Globals.balls):
+                p.removeUserDebugItem(Globals.score_text_id)
+                Globals.score_text_id = p.addUserDebugText(
+                    f"Collected: {Globals.score}", [0, 0, 1.5], textSize=2, lifeTime=0
+                )
+
+            time.sleep(1 / 240)
 
     # a wait function that just have the robot sits in idle
     def wait(self, ms):
