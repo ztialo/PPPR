@@ -34,7 +34,11 @@ def slider_control(robot):
     
 def getCamera(robot):
     # get robot position
-        pos, orn = p.getBasePositionAndOrientation(robot.id)
+        try:
+            pos, orn = p.getBasePositionAndOrientation(robot.id)
+        except p.error as e:
+            print("Error in getting position:", e)
+            return None
         
         rot_matrix = p.getMatrixFromQuaternion(orn) # orientation is in quaternion angle
         camera_forward = [rot_matrix[0], rot_matrix[3], rot_matrix[6]]
@@ -81,7 +85,7 @@ def findBall(frame):
 
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    offset = None
+    pixel_offset = None
     output_img = frame_bgr.copy()
 
     if contours:
@@ -93,9 +97,11 @@ def findBall(frame):
             cv2.circle(output_img, ball_center, int(radius), (0, 255, 0), 2)
 
             img_center_x = frame.shape[1] // 2
-            offset = ball_center[0] - img_center_x
+            pixel_offset = ball_center[0] - img_center_x
 
-    return mask, offset, output_img
+            angle_offset = (pixel_offset / (frame.shape[1] / 2)) * (Globals.fov / 2)
+
+    return mask, angle_offset, output_img
 
 def measureBallDistance(frame, heading, robot_x, robot_y):
     frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -182,3 +188,21 @@ def estimate_lateral_offset(distance, camera_offset_px, image_width=320, fov_deg
 
 def degreeIn360(angle):
     return (angle + 360) % 360
+
+# this fuunction is design for changing the ball degree from world frame to robot frame
+def convertAxis(angle):
+    angle -= 90
+    
+    if(angle < 0):
+        angle +=360
+    elif(angle > 360):
+        angle -=360
+        
+    return angle
+
+def ContactWrapper(robot):
+    if (Globals.score != checkContact(robot, Globals.balls)):
+            # score changed so update score 
+            p.removeUserDebugItem(Globals.score_text_id)  
+            Globals.score_text_id = p.addUserDebugText(f"Collected: {Globals.score}", [0, 0, 1.5], textSize=2, lifeTime=0)
+        

@@ -14,12 +14,13 @@ import helperFunctions as hf
 from JointControl import DifferentialDriveRobot
 import addBalls as ab
 import depthMeas
+import pathPlanning
 
 def main():
     # Connect to physics server with GUI
     p.connect(p.GUI)
 
-    # initialize 
+    # initialize
     p.setGravity(0, 0, -9.8)
     # Globals.debug_init()
 
@@ -27,7 +28,7 @@ def main():
     p.setAdditionalSearchPath(pybullet_data.getDataPath())  # for default URDFs
     p.loadURDF("plane.urdf")
     robot = DifferentialDriveRobot("urdf/diff_drive.urdf", [0,0,0.1])
-    # ab.addBalls_rand(10)
+    # ab.addBalls_rand(100)
     # ab.fourCoordTest()
     ab.tenBallTest()
 
@@ -36,8 +37,6 @@ def main():
     robot.left_wheel_joint_index = 0
     robot.right_wheel_joint_index = 1
     
-    # initial pos for robot path tracing
-    prev_pos = p.getBasePositionAndOrientation(robot.id)[0]  # starting position
     
     # Run simulation
     for i in range(1000000):
@@ -52,7 +51,15 @@ def main():
             # add currrent position of the robot to the world_map
             robot_pos = p.getBasePositionAndOrientation(robot.id)[0]
             world_map.append((round(robot_pos[0], 3), round(robot_pos[1], 3)))
-            print("world map: ", world_map)
+            # print("world map: ", world_map)
+            
+            path = pathPlanning.NearestNeighbor(world_map)
+            print("path:", path)
+            robot.followPath(path)
+            
+            # if i % 5 == 0:
+            #     curr_pos = hf.drawPath(robot, prev_pos)
+            #     prev_pos = curr_pos
             
         # if i % 5 == 0:
         #     frame = hf.getCamera(robot)  # Get camera image and update the view, this will be used for image processing
@@ -62,14 +69,10 @@ def main():
         #     cv2.imshow("Ball Detection", annotated_img)
         #     cv2.waitKey(1)
                 
-        # curr_pos = hf.drawPath(robot, prev_pos)
-        # prev_pos = curr_pos      
+        
 
         # constantly checks for ball 1 contact
-        if (Globals.score != hf.checkContact(robot, Globals.balls)):
-            # score changed so update score 
-            p.removeUserDebugItem(Globals.score_text_id)  
-            # Globals.score_text_id = p.addUserDebugText(f"Collected: {Globals.score}", [0, 0, 1.5], textSize=2, lifeTime=0)
+        hf.ContactWrapper(robot)
         
         time.sleep(1/240)  # Slow it down to real-time
 
