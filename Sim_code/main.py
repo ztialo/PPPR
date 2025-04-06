@@ -28,34 +28,43 @@ def main():
     p.setAdditionalSearchPath(pybullet_data.getDataPath())  # for default URDFs
     p.loadURDF("plane.urdf")
     robot = DifferentialDriveRobot("urdf/diff_drive.urdf", [0,0,0.1])
-    # ab.addBalls_rand(100)
+    # ab.addBalls_rand(10)
     # ab.fourCoordTest()
-    ab.tenBallTest()
+    # ab.tenBallTest()
 
     # print joints
     robot.print_joints()
     robot.left_wheel_joint_index = 0
     robot.right_wheel_joint_index = 1
     
-    
+    testFlag = 1
     # Run simulation
     for i in range(1000000):
         p.stepSimulation()
         
         if i == 30:
-            depthMeas.Map_scan(robot)
-            world_map = []
-            # depthMeas.print_balls(Globals.detected_balls)
-            world_map = depthMeas.extract_coords(Globals.detected_balls)
+            # depthMeas.Map_scan(robot)
+            # world_map = []
+            # # depthMeas.print_balls(Globals.detected_balls)
+            # world_map = depthMeas.extract_coords(Globals.detected_balls)
             
-            # add currrent position of the robot to the world_map
-            robot_pos = p.getBasePositionAndOrientation(robot.id)[0]
-            world_map.append((round(robot_pos[0], 3), round(robot_pos[1], 3)))
+            # # add currrent position of the robot to the world_map
+            # robot_pos = p.getBasePositionAndOrientation(robot.id)[0]
+            # world_map.append((round(robot_pos[0], 3), round(robot_pos[1], 3)))
             # print("world map: ", world_map)
             
-            path = pathPlanning.NearestNeighbor(world_map)
-            print("path:", path)
-            robot.followPath(path)
+            # path = pathPlanning.NearestNeighbor(world_map)
+            # print("path:", path)
+            # robot.followPath(path)
+
+            if(testFlag == 1):
+                robot.toCoord((1, 1))
+                robot.wait(500)
+                robot.toCoord((1, 0))
+                robot.wait(500)
+                robot.toCoord((-1, 0))
+                robot.wait(500)
+                robot.toCoord((0, 1))
             
             # if i % 5 == 0:
             #     curr_pos = hf.drawPath(robot, prev_pos)

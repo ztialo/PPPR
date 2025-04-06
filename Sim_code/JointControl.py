@@ -55,7 +55,7 @@ class DifferentialDriveRobot:
         self.wheel_control(self.right_wheel_joint_index, p.VELOCITY_CONTROL, 0, brake_force)
 
     def forward_for(self, target_dist):
-        target_dist += 0.1  # slight overshoot to ensure ball collection
+        # target_dist += 0.1  # slight overshoot to ensure ball collection
 
         start_pos, orn = p.getBasePositionAndOrientation(self.id)
         start_vec = np.array(start_pos)
@@ -66,7 +66,7 @@ class DifferentialDriveRobot:
         target_yaw = p.getEulerFromQuaternion(orn)[2]
 
         # Distance PID
-        dist_pid = PIDController(kp=200.0, ki=0.0, kd=10.0)
+        dist_pid = PIDController(kp=100.0, ki=0.0, kd=5.0)
         
         # Yaw PID to correct heading during forward movement
         heading_pid = PIDController(kp=50.0, ki=0.0, kd=2.0)
@@ -129,14 +129,8 @@ class DifferentialDriveRobot:
         prev_pos, orn = p.getBasePositionAndOrientation(self.id)
         start_yaw = p.getEulerFromQuaternion(orn)[2]
 
-        # smaller angle has small kp
-        if abs(angle_deg) < 10:
-            kp = 10
-            kd = 0.05
-        else:
-            kp = 90
-            kd = 1.1
-
+        kp = 5
+        kd = 0.3
         ki = 0.0
         pid = PIDController(kp, ki, kd)
         dt = 1 / 240
@@ -172,12 +166,8 @@ class DifferentialDriveRobot:
         prev_pos, orn = p.getBasePositionAndOrientation(self.id)
         start_yaw = p.getEulerFromQuaternion(orn)[2]
 
-        if abs(angle_deg) < 10:
-            kp = 10
-            kd = 0.05
-        else:
-            kp = 90
-            kd = 1.1
+        kp = 5
+        kd = 0.3
         ki=0.0
         pid = PIDController(kp, ki, kd)
         dt = 1 / 240
@@ -201,12 +191,66 @@ class DifferentialDriveRobot:
             if abs(error) < 0.02:
                 self.stop(50)
                 return
+
             
             # Optional: path trace
             curr_pos = hf.drawPath(self, prev_pos)
             prev_pos = curr_pos
 
             time.sleep(dt)
+
+    # a function that orient the robbot to face the target
+    def faceTarget(self, target_orientation):
+        # Get current position and orientation
+        try:
+            current_pos, orn = p.getBasePositionAndOrientation(self.id)
+        except p.error as e:
+            print("Error in getting position:", e)
+            return
+
+        # Get current heading angle
+        curr_yaw = p.getEulerFromQuaternion(orn)[2]
+        curr_heading_deg = np.rad2deg(curr_yaw)
+        curr_heading_deg = hf.degreeIn360(curr_heading_deg)
+
+        angle_to_turn = target_orientation - curr_heading_deg
+        angle_to_turn = (angle_to_turn + 540) % 360 - 180  # Normalize to [-180, 180)
+
+        print(f"Turn angle: {angle_to_turn:.2f} degrees")
+
+        if angle_to_turn > 0:
+            self.left_for(angle_to_turn)
+        elif angle_to_turn < 0:
+            self.right_for(angle_to_turn)
+    
+    # a function that move the robot to a target coordinate
+    def toCoord(self, target_coord):
+        print("Moving to target coordinate:", target_coord)
+        # Get current position and orientation
+        try:
+            current_pos, orn = p.getBasePositionAndOrientation(self.id)
+        except p.error as e:
+            print("Error in getting position:", e)
+            return
+
+        curr_pos = (-current_pos[1], current_pos[0])
+        curr_yaw = p.getEulerFromQuaternion(orn)[2]
+        curr_heading_deg = np.rad2deg(curr_yaw)
+        curr_heading_deg = hf.degreeIn360(curr_heading_deg)
+
+        #calculate orienation of angle to turn to face target coord
+        delta_vec = np.array(target_coord) - np.array(curr_pos)
+        dist = np.linalg.norm(delta_vec)
+        # print(f"Moving from {curr_pos} to {target_coord}, distance = {dist:.3f} m")
+        angle_to_turn = np.arctan2(delta_vec[1], delta_vec[0])
+        target_angle_deg = np.rad2deg(angle_to_turn)
+        target_angle_deg = hf.degreeIn360(target_angle_deg)  # Normalize to [0, 360)
+        target_angle_deg = hf.convertAxis(target_angle_deg)
+        # print("current: ", curr_heading_deg, " target: ", target_angle_deg)
+
+        self.faceTarget(target_angle_deg)
+        self.forward_for(dist)
+        
 
     # a wait function that just have the robot sits in idle
     def wait(self, ms):
@@ -216,8 +260,8 @@ class DifferentialDriveRobot:
             time.sleep(1/240)  # Slow it down to real-time 
     
     def followPath(self, path):
-        for i in range(len(path) - 1):
-        # for i in range(0,3):
+        # for i in range(len(path) - 1):
+        for i in range(0,3):
             print("moving to coord: ", i+1)
             p.stepSimulation()
 
@@ -251,7 +295,7 @@ class DifferentialDriveRobot:
             angle_to_turn = (target_angle_deg - curr_heading_deg + 540) % 360 - 180
 
             print(f"Turn angle: {angle_to_turn:.2f} degrees")
-
+            
             if angle_to_turn > 0:
                 self.left_for(angle_to_turn)
             elif angle_to_turn < 0:
