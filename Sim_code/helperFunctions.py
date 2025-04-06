@@ -103,6 +103,48 @@ def findBall(frame):
 
     return mask, angle_offset, output_img
 
+# return the nearest ball coordinate and distance in the given frame 
+def getBallCoordinat(frame, heading, robot_x, robot_y):
+    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
+
+    lower_ball = np.array([12, 200, 140])
+    upper_ball = np.array([18, 255, 255])
+
+    mask = cv2.inRange(hsv, lower_ball, upper_ball)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    if contours:
+        largest = max(contours, key=cv2.contourArea)
+        (x, y), radius = cv2.minEnclosingCircle(largest)
+
+        if radius > 0.5:
+            ball_center = (x, y)
+            camera_offset_px = ball_center[0] - (frame.shape[1] // 2)  # offset from center of the image
+            offset_y = ball_center[1] - (frame.shape[0] // 2)  # offset from center of the image
+            
+            angle = np.arctan2(offset_y, camera_offset_px)
+            angle_deg = np.rad2deg(angle)  # convert to degrees
+            # Adjust angle based on robot heading
+            angle_deg = (angle_deg + heading) % 360
+            
+            distance = calc_dist(radius)  # Euclidean distance from center
+            lateral_offset_x = estimate_lateral_offset(distance, camera_offset_px)
+            y_coord = np.sqrt(distance**2 - lateral_offset_x**2)  # y coordinate in the robot's frame
+            
+            heading_rad = np.deg2rad(heading)
+            x_local = lateral_offset_x
+            y_local = y_coord
+            print("found ball at local coord: ", (x_local, y_local))
+            print("robot is now at world coord: ", (robot_x, robot_y))
+            
+            x_world = robot_x + (x_local * np.cos(heading_rad)) - (y_local * np.sin(heading_rad))
+            y_world = robot_y + (x_local * np.sin(heading_rad)) + (y_local * np.cos(heading_rad))
+
+            return (x_world, y_world)
+
+
 def measureBallDistance(frame, heading, robot_x, robot_y):
     frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
@@ -115,7 +157,7 @@ def measureBallDistance(frame, heading, robot_x, robot_y):
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     
-    print(f"Heading: {heading:.2f} degrees")
+    printHeading(heading)
     if contours:
         # if a ball is detected, collect its position relative to the robot and its size
         detected_balls = []
@@ -147,11 +189,12 @@ def measureBallDistance(frame, heading, robot_x, robot_y):
                     'radius': radius,
                     'camera_offset_px': camera_offset_px,
                     'local_coord': (x_local, y_local),  # y coordinate in the robot's frame
-                    'world_coord': (x_world, y_world)  # world coordinates
+                    'world_coord': (round(float(x_world), 3), round(float(y_world), 3))  # world coordinates
                 })
         return detected_balls
     else:
         return None
+    
 
 def calc_dist(radius):
     # the contant k is the inverse proportionality constant for the distance calculation
@@ -173,8 +216,8 @@ def drawPath(robot, prev_pos):
 
     # Draw a line from previous to current
     p.addUserDebugLine(prev_pos_with_offset, curr_pos_with_offset,
-                    lineColorRGB=[1, 0, 0],  # red
-                    lineWidth=3.0,            # thicker line
+                    lineColorRGB=[1, 0.5, 0],  # orange
+                    lineWidth=1.0,            # thicker line
                     lifeTime=0)               # stays forever
 
     return curr_pos  # return current position for update
@@ -187,7 +230,13 @@ def estimate_lateral_offset(distance, camera_offset_px, image_width=320, fov_deg
     return lateral_offset
 
 def degreeIn360(angle):
-    return (angle + 360) % 360
+    new_angle = convertAxis(angle)
+    return (new_angle + 360) % 360
+
+def printHeading(angle):
+    heading = (360 - angle + 90) % 360
+    print(f"Heading: {heading:.2f} degrees")
+    
 
 # this fuunction is design for changing the ball degree from world frame to robot frame
 def convertAxis(angle):

@@ -14,7 +14,7 @@ import cv2
 
 class DifferentialDriveRobot:
     def __init__(self, urdf_path, start_pos):
-        self.id = p.loadURDF("urdf/diff_drive.urdf", [0,0,0.01])
+        self.id = p.loadURDF(urdf_path, start_pos, p.getQuaternionFromEuler([0,0,np.pi/2]))
         self.left_wheel_joint_index = None
         self.right_wheel_joint_index = None
     
@@ -225,7 +225,7 @@ class DifferentialDriveRobot:
     
     # a function that move the robot to a target coordinate
     def toCoord(self, target_coord):
-        print("Moving to target coordinate:", target_coord)
+        
         # Get current position and orientation
         try:
             current_pos, orn = p.getBasePositionAndOrientation(self.id)
@@ -250,7 +250,41 @@ class DifferentialDriveRobot:
 
         self.faceTarget(target_angle_deg)
         self.forward_for(dist)
+
+    def recalcCoord(self, old_coord):
+        try:
+            current_pos, orn = p.getBasePositionAndOrientation(self.id)
+        except p.error as e:
+            print("Error in getting position:", e)
+            return
+
+        curr_pos = (-current_pos[1], current_pos[0])
+        curr_yaw = p.getEulerFromQuaternion(orn)[2]
+        curr_heading_deg = np.rad2deg(curr_yaw)
+        curr_heading_deg = hf.degreeIn360(curr_heading_deg)
+
+        #calculate orienation of angle to turn to face target coord
+        delta_vec = np.array(old_coord) - np.array(curr_pos)
+        dist = np.linalg.norm(delta_vec)
+        # print(f"Moving from {curr_pos} to {target_coord}, distance = {dist:.3f} m")
+        angle_to_turn = np.arctan2(delta_vec[1], delta_vec[0])
+        target_angle_deg = np.rad2deg(angle_to_turn)
+        target_angle_deg = hf.degreeIn360(target_angle_deg)  # Normalize to [0, 360)
+        target_angle_deg = hf.convertAxis(target_angle_deg)
+        # print("current: ", curr_heading_deg, " target: ", target_angle_deg)
+
+        self.faceTarget(target_angle_deg)
+
+
+        frame = hf.getCamera(self)
         
+        # get the robot world coordinates
+        robot_x = current_pos[0]
+        robot_y = -current_pos[1]
+        print("robot current coord: ", curr_pos)
+        new_coord = hf.getBallCoordinat(frame, curr_heading_deg, robot_x, robot_y)
+        new_coord = (round(float(new_coord[0]), 5), round(float(new_coord[1]),5))
+        return new_coord
 
     # a wait function that just have the robot sits in idle
     def wait(self, ms):
@@ -260,8 +294,11 @@ class DifferentialDriveRobot:
             time.sleep(1/240)  # Slow it down to real-time 
     
     def followPath(self, path):
-        for i in range(len(path)):
-        
+        # for i in range(1, len(path)): # skip the firtst coordinate as it is the robot position
+        for i in range(1, 2):
             coord_toMove = path[i]
-            self.toCoord(coord_toMove)
+            print("old coordinate: ", coord_toMove)
+            updated_coord = self.recalcCoord(coord_toMove)
+            print("Moving to target coordinate:", updated_coord)
+            # self.toCoord(updated_coord)
 

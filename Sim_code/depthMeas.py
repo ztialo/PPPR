@@ -49,7 +49,7 @@ def Map_scan(robot):
             # cv2.imshow("Ball Detection", annotated_img)
             # cv2.waitKey(1)
             
-            robot.right_for(-60)
+            robot.right_for(-65)
             angleCounter += 60
             
         
@@ -65,7 +65,7 @@ def extract_coords(detected_balls):
     ball_map = []
     for ball in detected_balls:
         x_world, y_world = ball['world_coord']
-        ball_map.append((round(float(x_world), 3), round(float(y_world), 3)))
+        ball_map.append((x_world, y_world))
     return ball_map
 
 

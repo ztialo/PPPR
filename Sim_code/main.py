@@ -27,9 +27,11 @@ def main():
     # Load plane and robot
     p.setAdditionalSearchPath(pybullet_data.getDataPath())  # for default URDFs
     p.loadURDF("plane.urdf")
-    robot = DifferentialDriveRobot("urdf/diff_drive.urdf", [0,0,0.1])
-    ab.addBalls_rand(520)
-    # ab.fourCoordTest()
+
+    # red is x axis, green is y axis
+    robot = DifferentialDriveRobot("urdf/diff_drive.urdf", [0,0,0.1])  
+    # ab.addBalls_rand(520)
+    ab.fourCoordTest()
     # ab.tenBallTest()
 
     # print joints
@@ -43,51 +45,20 @@ def main():
         p.stepSimulation()
         
         if i == 30:
-            # depthMeas.Map_scan(robot)
-            # world_map = []
-            # # depthMeas.print_balls(Globals.detected_balls)
-            # world_map = depthMeas.extract_coords(Globals.detected_balls)
+            depthMeas.Map_scan(robot)
+            world_map = []
+            # depthMeas.print_balls(Globals.detected_balls)
+            world_map = depthMeas.extract_coords(Globals.detected_balls)
             
-            # # add currrent position of the robot to the world_map
-            # robot_pos = p.getBasePositionAndOrientation(robot.id)[0]
-            # world_map.append((round(robot_pos[0], 3), round(robot_pos[1], 3)))
-            # print("world map: ", world_map)
+            # add currrent position of the robot to the world_map
+            robot_pos = p.getBasePositionAndOrientation(robot.id)[0]
+            world_map.append((round(robot_pos[0], 3), round(robot_pos[1], 3)))
+            print("world map: ", world_map)
 
             
             # path = pathPlanning.NearestNeighbor(world_map)
             # print("path:", path)
-            path = [(0.0326, 0.2022),
-    (0.2453, 0.7144),
-    (0.7457, 1.2984),
-    (1.523, 1.6806),
-    (2.4448, 1.6701),
-    (3.2986, 1.2265),
-    (3.8632, 0.4498),
-    (3.9846, -0.4916),
-    (3.629, -1.4484),
-    (2.8947, -2.3433),
-    (1.978, -3.1669),
-    (1.1055, -3.9312),
-    (0.4572, -4.6174),
-    (0.1073, -5.1577),
-    (0.0041, -5.4604),
-    (-0.0041, -5.4604),
-    (-0.1073, -5.1577),
-    (-0.4572, -4.6174),
-    (-1.1055, -3.9312),
-    (-1.978, -3.1669),
-    (-2.8947, -2.3433),
-    (-3.629, -1.4484),
-    (-3.9846, -0.4916),
-    (-3.8632, 0.4498),
-    (-3.2986, 1.2265),
-    (-2.4448, 1.6701),
-    (-1.523, 1.6806),
-    (-0.7457, 1.2984),
-    (-0.2453, 0.7144),
-    (-0.0326, 0.2022),
-    (-0.0, 0.0)]
-            robot.followPath(path)
+            # robot.followPath(path)
             
             # if i % 5 == 0:
             #     curr_pos = hf.drawPath(robot, prev_pos)
