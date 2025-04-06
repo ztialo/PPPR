@@ -28,7 +28,7 @@ def main():
     p.setAdditionalSearchPath(pybullet_data.getDataPath())  # for default URDFs
     p.loadURDF("plane.urdf")
     robot = DifferentialDriveRobot("urdf/diff_drive.urdf", [0,0,0.1])
-    # ab.addBalls_rand(10)
+    ab.addBalls_rand(520)
     # ab.fourCoordTest()
     # ab.tenBallTest()
 
@@ -52,19 +52,42 @@ def main():
             # robot_pos = p.getBasePositionAndOrientation(robot.id)[0]
             # world_map.append((round(robot_pos[0], 3), round(robot_pos[1], 3)))
             # print("world map: ", world_map)
+
             
             # path = pathPlanning.NearestNeighbor(world_map)
             # print("path:", path)
-            # robot.followPath(path)
-
-            if(testFlag == 1):
-                robot.toCoord((1, 1))
-                robot.wait(500)
-                robot.toCoord((1, 0))
-                robot.wait(500)
-                robot.toCoord((-1, 0))
-                robot.wait(500)
-                robot.toCoord((0, 1))
+            path = [(0.0326, 0.2022),
+    (0.2453, 0.7144),
+    (0.7457, 1.2984),
+    (1.523, 1.6806),
+    (2.4448, 1.6701),
+    (3.2986, 1.2265),
+    (3.8632, 0.4498),
+    (3.9846, -0.4916),
+    (3.629, -1.4484),
+    (2.8947, -2.3433),
+    (1.978, -3.1669),
+    (1.1055, -3.9312),
+    (0.4572, -4.6174),
+    (0.1073, -5.1577),
+    (0.0041, -5.4604),
+    (-0.0041, -5.4604),
+    (-0.1073, -5.1577),
+    (-0.4572, -4.6174),
+    (-1.1055, -3.9312),
+    (-1.978, -3.1669),
+    (-2.8947, -2.3433),
+    (-3.629, -1.4484),
+    (-3.9846, -0.4916),
+    (-3.8632, 0.4498),
+    (-3.2986, 1.2265),
+    (-2.4448, 1.6701),
+    (-1.523, 1.6806),
+    (-0.7457, 1.2984),
+    (-0.2453, 0.7144),
+    (-0.0326, 0.2022),
+    (-0.0, 0.0)]
+            robot.followPath(path)
             
             # if i % 5 == 0:
             #     curr_pos = hf.drawPath(robot, prev_pos)
@@ -93,6 +116,7 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
     # depthMeas.Test()
 

@@ -11,8 +11,8 @@ def addBalls_at(x, y):
 # Function to add balls in random locations in simulation
 def addBalls_rand(n):
     for i in range(1, n+1):
-        x = random.uniform(-2, 2)  # Random x position
-        y = random.uniform(-2, 2)  # Random y position
+        x = random.uniform(-10, 10)  # Random x position
+        y = random.uniform(-10, 10)  # Random y position
         ball_id = p.loadURDF("urdf/ping_pong.urdf", [x, y, 0.05])
         Globals.balls.append(ball_id)
 

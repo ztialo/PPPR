@@ -129,7 +129,7 @@ class DifferentialDriveRobot:
         prev_pos, orn = p.getBasePositionAndOrientation(self.id)
         start_yaw = p.getEulerFromQuaternion(orn)[2]
 
-        kp = 5
+        kp = 10
         kd = 0.3
         ki = 0.0
         pid = PIDController(kp, ki, kd)
@@ -166,7 +166,7 @@ class DifferentialDriveRobot:
         prev_pos, orn = p.getBasePositionAndOrientation(self.id)
         start_yaw = p.getEulerFromQuaternion(orn)[2]
 
-        kp = 5
+        kp = 10
         kd = 0.3
         ki=0.0
         pid = PIDController(kp, ki, kd)
@@ -260,67 +260,8 @@ class DifferentialDriveRobot:
             time.sleep(1/240)  # Slow it down to real-time 
     
     def followPath(self, path):
-        # for i in range(len(path) - 1):
-        for i in range(0,3):
-            print("moving to coord: ", i+1)
-            p.stepSimulation()
+        for i in range(len(path)):
+        
+            coord_toMove = path[i]
+            self.toCoord(coord_toMove)
 
-            # Get current position and orientation
-            try:
-                current_pos, orn = p.getBasePositionAndOrientation(self.id)
-            except p.error as e:
-                print("Error in getting position:", e)
-                continue
-            curr_pos = (-current_pos[1], current_pos[0])  # pybullet has coord (y,x)
-            curr_yaw = p.getEulerFromQuaternion(orn)[2]
-            curr_heading_deg = np.rad2deg(curr_yaw)
-            curr_heading_deg = hf.degreeIn360(curr_heading_deg)  # Normalize to [0, 360)
-
-            # Next target position
-            next_pos = path[i + 1]
-
-            # Compute vector and distance
-            delta_vec = np.array(next_pos) - np.array(curr_pos)
-            dist = np.linalg.norm(delta_vec)
-            print(f"Moving from {curr_pos} to {next_pos}, distance = {dist:.3f} m")
-            
-            # Compute angle to turn (world frame to robot frame)
-            target_angle_rad = np.arctan2(delta_vec[1], delta_vec[0])
-            target_angle_deg = np.rad2deg(target_angle_rad)
-            target_angle_deg = hf.degreeIn360(target_angle_deg)  # Normalize to [0, 360)
-            target_angle_deg = hf.convertAxis(target_angle_deg)
-
-            print("current: ", curr_heading_deg, " target: ", target_angle_deg) 
-            # Relative angle the robot must turn (signed shortest path)
-            angle_to_turn = (target_angle_deg - curr_heading_deg + 540) % 360 - 180
-
-            print(f"Turn angle: {angle_to_turn:.2f} degrees")
-            
-            if angle_to_turn > 0:
-                self.left_for(angle_to_turn)
-            elif angle_to_turn < 0:
-                self.right_for(angle_to_turn)
-                
-            frame = hf.getCamera(self)  # Get camera image and update the view, this will be used for image processing
-            while(frame is None):
-                frame = hf.getCamera(self)
-
-            mask, offset, annotated_img = hf.findBall(frame)
-            cv2.imshow("Ball Detection", annotated_img)
-            cv2.waitKey(1)
-            
-
-            if offset > 0:
-                print("     offset right for: ", offset)
-                self.right_for(offset)
-            else:
-                print("     offset left for: ", offset)
-                self.left_for(offset)
-            
-            # Move forward
-            self.forward_for(dist)
-
-            # stop robot to reset wheel momemtum
-            self.stop(50)
-
-            time.sleep(1 / 240)  # Slow it down to real-time

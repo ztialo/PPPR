@@ -173,8 +173,8 @@ def drawPath(robot, prev_pos):
 
     # Draw a line from previous to current
     p.addUserDebugLine(prev_pos_with_offset, curr_pos_with_offset,
-                    lineColorRGB=[1, 0.5, 0],  # orange
-                    lineWidth=1.0,            # thicker line
+                    lineColorRGB=[1, 0, 0],  # red
+                    lineWidth=3.0,            # thicker line
                     lifeTime=0)               # stays forever
 
     return curr_pos  # return current position for update
