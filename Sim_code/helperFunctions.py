@@ -124,11 +124,6 @@ def getBallCoordinat(frame, heading, robot_x, robot_y):
             camera_offset_px = ball_center[0] - (frame.shape[0] // 2)  # offset from center of the image
             offset_y = ball_center[1] - (frame.shape[1] // 2)  # offset from center of the image
             
-            angle = np.arctan2(offset_y, camera_offset_px)
-            angle_deg = np.rad2deg(angle)  # convert to degrees
-            # Adjust angle based on robot heading
-            angle_deg = (angle_deg + heading) % 360
-            
             distance = calc_dist(radius)  # Euclidean distance from center
             lateral_offset_x = estimate_lateral_offset(distance, camera_offset_px)
             y_coord = np.sqrt(distance**2 - lateral_offset_x**2)  # y coordinate in the robot's frame
@@ -136,6 +131,7 @@ def getBallCoordinat(frame, heading, robot_x, robot_y):
             heading_rad = np.deg2rad(heading)
             x_local = lateral_offset_x
             y_local = y_coord
+            printHeading(heading)
             print("found ball at local coord: ", (x_local, y_local))
             # print("robot is now at world coord: ", (robot_x, robot_y))
             

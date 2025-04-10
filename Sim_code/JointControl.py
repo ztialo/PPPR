@@ -287,9 +287,26 @@ class DifferentialDriveRobot:
         robot_x = curr_pos[0]
         robot_y = curr_pos[1]
         print("robot current coord: ", curr_pos)
+        # self.faceBall(frame)
         new_coord = hf.getBallCoordinat(frame, curr_heading_deg, robot_x, robot_y)
         new_coord = (round(float(new_coord[0]), 5), round(float(new_coord[1]),5))
         return new_coord
+    
+    def faceBall(self, frame):
+        _, offset_angle, _ = hf.findBall(frame)
+        angle_threshold = 5
+        if(abs(offset_angle) > angle_threshold):
+            if(offset_angle > angle_threshold):
+                self.left_for(5)
+                print("faceBall: left turn 5")
+            elif(offset_angle < angle_threshold):
+                self.right_for(5)
+                print("faceBall: right turn 5")
+            new_frame = hf.getCamera(self.id)
+            self.faceBall(new_frame)
+
+        
+        
 
     # a wait function that just have the robot sits in idle
     def wait(self, ms):
@@ -302,8 +319,8 @@ class DifferentialDriveRobot:
         for i in range(1, len(path)-3): # skip the firtst coordinate as it is the robot position
         # for i in range(1, 2):
             coord_toMove = path[i]
-            # print("old coordinate: ", coord_toMove)
-            # updated_coord = self.recalcCoord(coord_toMove)
-            print("Moving to target coordinate:", coord_toMove)
-            # self.toCoord(updated_coord)
+            print("old coordinate: ", coord_toMove)
+            updated_coord = self.recalcCoord(coord_toMove)
+            print("Updated Coordinate:", updated_coord)
+            self.toCoord(updated_coord)
 
