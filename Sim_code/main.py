@@ -54,25 +54,10 @@ def main():
             robot_pos = p.getBasePositionAndOrientation(robot.id)[0]
             world_map.append((round(robot_pos[0], 3), round(robot_pos[1], 3)))
             print("world map: ", world_map)
-
-            
-            # path = pathPlanning.NearestNeighbor(world_map)
-            # print("path:", path)
-            # robot.followPath(path)
-            
-            # if i % 5 == 0:
-            #     curr_pos = hf.drawPath(robot, prev_pos)
-            #     prev_pos = curr_pos
-            
-        # if i % 5 == 0:
-        #     frame = hf.getCamera(robot)  # Get camera image and update the view, this will be used for image processing
-        #     mask, offset, annotated_img = hf.findBall(frame)
-            
-        #     # ball detection debug
-        #     cv2.imshow("Ball Detection", annotated_img)
-        #     cv2.waitKey(1)
-                
-        
+    
+            path = pathPlanning.NearestNeighbor(world_map)
+            print("path:", path)
+            robot.followPath(path)       
 
         # constantly checks for ball 1 contact
         hf.ContactWrapper(robot)

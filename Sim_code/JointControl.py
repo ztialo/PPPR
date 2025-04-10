@@ -124,7 +124,7 @@ class DifferentialDriveRobot:
 
 
     def left_for(self, angle_deg):
-        angle_rad = np.deg2rad(angle_deg)
+        angle_rad = np.deg2rad(-angle_deg)
 
         prev_pos, orn = p.getBasePositionAndOrientation(self.id)
         start_yaw = p.getEulerFromQuaternion(orn)[2]
@@ -161,7 +161,7 @@ class DifferentialDriveRobot:
             time.sleep(dt)
 
     def right_for(self, angle_deg):
-        angle_rad = np.deg2rad(angle_deg)
+        angle_rad = np.deg2rad(-angle_deg)
 
         prev_pos, orn = p.getBasePositionAndOrientation(self.id)
         start_yaw = p.getEulerFromQuaternion(orn)[2]
@@ -212,15 +212,16 @@ class DifferentialDriveRobot:
         curr_yaw = p.getEulerFromQuaternion(orn)[2]
         curr_heading_deg = np.rad2deg(curr_yaw)
         curr_heading_deg = hf.degreeIn360(curr_heading_deg)
+        curr_heading_deg = hf.toCompassHeading(curr_heading_deg)
 
         angle_to_turn = target_orientation - curr_heading_deg
-        angle_to_turn = (angle_to_turn + 540) % 360 - 180  # Normalize to [-180, 180)
+        # angle_to_turn = (angle_to_turn + 540) % 360 - 180  # Normalize to [-180, 180)
 
         print(f"Turn angle: {angle_to_turn:.2f} degrees")
 
-        if angle_to_turn > 0:
+        if angle_to_turn < 0:
             self.left_for(angle_to_turn)
-        elif angle_to_turn < 0:
+        elif angle_to_turn > 0:
             self.right_for(angle_to_turn)
     
     # a function that move the robot to a target coordinate
@@ -233,54 +234,58 @@ class DifferentialDriveRobot:
             print("Error in getting position:", e)
             return
 
-        curr_pos = (-current_pos[1], current_pos[0])
+        curr_pos = (current_pos[0], current_pos[1])
         curr_yaw = p.getEulerFromQuaternion(orn)[2]
         curr_heading_deg = np.rad2deg(curr_yaw)
         curr_heading_deg = hf.degreeIn360(curr_heading_deg)
+        curr_heading_deg = hf.toCompassHeading(curr_heading_deg)
 
         #calculate orienation of angle to turn to face target coord
         delta_vec = np.array(target_coord) - np.array(curr_pos)
         dist = np.linalg.norm(delta_vec)
-        # print(f"Moving from {curr_pos} to {target_coord}, distance = {dist:.3f} m")
-        angle_to_turn = np.arctan2(delta_vec[1], delta_vec[0])
+        print(f"Moving from {curr_pos} to {target_coord}, distance = {dist:.3f} m")
+        angle_to_turn = np.arctan2(delta_vec[0], delta_vec[1])
         target_angle_deg = np.rad2deg(angle_to_turn)
         target_angle_deg = hf.degreeIn360(target_angle_deg)  # Normalize to [0, 360)
-        target_angle_deg = hf.convertAxis(target_angle_deg)
-        # print("current: ", curr_heading_deg, " target: ", target_angle_deg)
+        target_angle_deg = hf.toCompassHeading(target_angle_deg)
+        print("current: ", curr_heading_deg, " target: ", target_angle_deg)
 
         self.faceTarget(target_angle_deg)
         self.forward_for(dist)
 
     def recalcCoord(self, old_coord):
+        # old coord is the general coordinate of the ball
         try:
             current_pos, orn = p.getBasePositionAndOrientation(self.id)
         except p.error as e:
             print("Error in getting position:", e)
             return
 
-        curr_pos = (-current_pos[1], current_pos[0])
+        curr_pos = (current_pos[0], current_pos[1])
         curr_yaw = p.getEulerFromQuaternion(orn)[2]
-        curr_heading_deg = np.rad2deg(curr_yaw)
-        curr_heading_deg = hf.degreeIn360(curr_heading_deg)
+        curr_heading = np.rad2deg(curr_yaw)
+        curr_heading_deg = hf.degreeIn360(curr_heading)
+        curr_heading_deg = hf.toCompassHeading(curr_heading_deg)
 
         #calculate orienation of angle to turn to face target coord
-        delta_vec = np.array(old_coord) - np.array(curr_pos)
+        delta_vec = np.array(old_coord) - np.array(curr_pos) # calculates the vector from world frame to robot frame
         dist = np.linalg.norm(delta_vec)
-        # print(f"Moving from {curr_pos} to {target_coord}, distance = {dist:.3f} m")
-        angle_to_turn = np.arctan2(delta_vec[1], delta_vec[0])
-        target_angle_deg = np.rad2deg(angle_to_turn)
+        print(f"Moving from {curr_pos} to {old_coord}, distance = {dist:.3f} m")
+        frameAngle = np.arctan2(delta_vec[0], delta_vec[1]) # the angle from the y axis to the delta vector
+
+        # get target 
+        target_angle_deg = np.rad2deg(frameAngle)
         target_angle_deg = hf.degreeIn360(target_angle_deg)  # Normalize to [0, 360)
-        target_angle_deg = hf.convertAxis(target_angle_deg)
-        # print("current: ", curr_heading_deg, " target: ", target_angle_deg)
+        target_angle_deg = hf.toCompassHeading(target_angle_deg)
+        print("current: ", curr_heading_deg, " target: ", target_angle_deg)
 
-        self.faceTarget(target_angle_deg)
-
+        self.faceTarget(target_angle_deg) 
 
         frame = hf.getCamera(self)
         
         # get the robot world coordinates
-        robot_x = current_pos[0]
-        robot_y = -current_pos[1]
+        robot_x = curr_pos[0]
+        robot_y = curr_pos[1]
         print("robot current coord: ", curr_pos)
         new_coord = hf.getBallCoordinat(frame, curr_heading_deg, robot_x, robot_y)
         new_coord = (round(float(new_coord[0]), 5), round(float(new_coord[1]),5))
@@ -294,11 +299,11 @@ class DifferentialDriveRobot:
             time.sleep(1/240)  # Slow it down to real-time 
     
     def followPath(self, path):
-        # for i in range(1, len(path)): # skip the firtst coordinate as it is the robot position
-        for i in range(1, 2):
+        for i in range(1, len(path)-3): # skip the firtst coordinate as it is the robot position
+        # for i in range(1, 2):
             coord_toMove = path[i]
-            print("old coordinate: ", coord_toMove)
-            updated_coord = self.recalcCoord(coord_toMove)
-            print("Moving to target coordinate:", updated_coord)
+            # print("old coordinate: ", coord_toMove)
+            # updated_coord = self.recalcCoord(coord_toMove)
+            print("Moving to target coordinate:", coord_toMove)
             # self.toCoord(updated_coord)
 

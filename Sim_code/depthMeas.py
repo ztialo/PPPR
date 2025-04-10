@@ -49,7 +49,7 @@ def Map_scan(robot):
             # cv2.imshow("Ball Detection", annotated_img)
             # cv2.waitKey(1)
             
-            robot.right_for(-65)
+            robot.right_for(65)
             angleCounter += 60
             
         

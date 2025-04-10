@@ -121,8 +121,8 @@ def getBallCoordinat(frame, heading, robot_x, robot_y):
 
         if radius > 0.5:
             ball_center = (x, y)
-            camera_offset_px = ball_center[0] - (frame.shape[1] // 2)  # offset from center of the image
-            offset_y = ball_center[1] - (frame.shape[0] // 2)  # offset from center of the image
+            camera_offset_px = ball_center[0] - (frame.shape[0] // 2)  # offset from center of the image
+            offset_y = ball_center[1] - (frame.shape[1] // 2)  # offset from center of the image
             
             angle = np.arctan2(offset_y, camera_offset_px)
             angle_deg = np.rad2deg(angle)  # convert to degrees
@@ -137,7 +137,7 @@ def getBallCoordinat(frame, heading, robot_x, robot_y):
             x_local = lateral_offset_x
             y_local = y_coord
             print("found ball at local coord: ", (x_local, y_local))
-            print("robot is now at world coord: ", (robot_x, robot_y))
+            # print("robot is now at world coord: ", (robot_x, robot_y))
             
             x_world = robot_x + (x_local * np.cos(heading_rad)) - (y_local * np.sin(heading_rad))
             y_world = robot_y + (x_local * np.sin(heading_rad)) + (y_local * np.cos(heading_rad))
@@ -230,24 +230,14 @@ def estimate_lateral_offset(distance, camera_offset_px, image_width=320, fov_deg
     return lateral_offset
 
 def degreeIn360(angle):
-    new_angle = convertAxis(angle)
-    return (new_angle + 360) % 360
+    return (angle + 360) % 360
+
+def toCompassHeading(angle):
+    return (360 - angle + 90) % 360
 
 def printHeading(angle):
-    heading = (360 - angle + 90) % 360
+    heading = toCompassHeading(angle)
     print(f"Heading: {heading:.2f} degrees")
-    
-
-# this fuunction is design for changing the ball degree from world frame to robot frame
-def convertAxis(angle):
-    angle -= 90
-    
-    if(angle < 0):
-        angle +=360
-    elif(angle > 360):
-        angle -=360
-        
-    return angle
 
 def ContactWrapper(robot):
     if (Globals.score != checkContact(robot, Globals.balls)):
