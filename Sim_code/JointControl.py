@@ -289,8 +289,12 @@ class DifferentialDriveRobot:
         print("robot current coord: ", curr_pos)
         # self.faceBall(frame)
         new_coord = hf.getBallCoordinat(frame, curr_heading_deg, robot_x, robot_y)
-        new_coord = (round(float(new_coord[0]), 5), round(float(new_coord[1]),5))
-        return new_coord
+        
+        if(new_coord != None):
+            new_coord = (round(float(new_coord[0]), 5), round(float(new_coord[1]),5))
+            return new_coord
+        else:
+            return (0,0)
     
     def faceBall(self, frame):
         _, offset_angle, _ = hf.findBall(frame)
@@ -322,5 +326,5 @@ class DifferentialDriveRobot:
             print("old coordinate: ", coord_toMove)
             updated_coord = self.recalcCoord(coord_toMove)
             print("Updated Coordinate:", updated_coord)
-            self.toCoord(updated_coord)
+            # self.toCoord(updated_coord)
 

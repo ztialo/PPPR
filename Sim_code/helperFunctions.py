@@ -133,7 +133,7 @@ def getBallCoordinat(frame, heading, robot_x, robot_y):
             y_local = y_coord
             printHeading(heading)
             print("found ball at local coord: ", (x_local, y_local))
-            # print("robot is now at world coord: ", (robot_x, robot_y))
+            print("robot is now at world coord: ", (robot_x, robot_y))
             
             x_world = robot_x + (x_local * np.cos(heading_rad)) - (y_local * np.sin(heading_rad))
             y_world = robot_y + (x_local * np.sin(heading_rad)) + (y_local * np.cos(heading_rad))
