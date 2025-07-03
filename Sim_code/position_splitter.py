@@ -1,5 +1,5 @@
 import time
-from ball_detection import detect_ball  # Import the ball detection function
+from Sim_code.ball_detection import detect_ball  # Import the ball detection function
 import threading
 from queue import Queue
 
