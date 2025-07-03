@@ -19,7 +19,6 @@ import pathPlanning
 def main():
     # Connect to physics server with GUI
     p.connect(p.GUI)
-
     # initialize
     p.setGravity(0, 0, -9.8)
     # Globals.debug_init()
@@ -29,7 +28,7 @@ def main():
     p.loadURDF("plane.urdf")
 
     # red is x axis, green is y axis
-    robot = DifferentialDriveRobot("urdf/diff_drive.urdf", [0,0,0.1])  
+    robot = DifferentialDriveRobot("URDF/diff_drive.urdf", [0,0,0.1])  
     # ab.addBalls_rand(520)
     ab.fourCoordTest()
     # ab.tenBallTest()

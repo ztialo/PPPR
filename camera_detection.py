@@ -14,6 +14,11 @@ while True:
     if cv2.waitKey(1) == ord('q'):
         break
 
+
+
+
+
+
 cv2.destroyAllWindows()
 
 # # Use libcamera-v4l2 as the video source for Raspberry Pi Camera Module
