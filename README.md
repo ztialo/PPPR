@@ -1,16 +1,16 @@
-# PPPR
-PPPR, as known as Ping Pong Picker Robot, the first RP project created by Zi Tao Li. The goal of this project is to create an robot with autonomous system that use camera sensor to track target ball and output instructions to the motor drive to pick up the ball.
+# Ping Pong Picker Robot
 
-This repository is first created in Dec 14th of 2024.
+## Overview
+The goal of this project is to create a robot in PyBullet simulation with an autonomous system that uses a camera to track target balls and output instructions to the motor drive to pick up the ball.
 
-# show camera without time limit
+## show camera without time limit
 libcamera-hello --timeout=0
 
-# the command to run the ball_detection.py\
-python3 ball_detection.py
-
-# the command to run camera_detection.py
-python3 camera_detection.py
+## Command to run the simulation
+Run the following command inside the src file:
+```bash
+python3 main.py
+```
 
 
 
